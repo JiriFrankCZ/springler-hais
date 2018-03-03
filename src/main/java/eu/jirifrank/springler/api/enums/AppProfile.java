@@ -1,7 +1,10 @@
 package eu.jirifrank.springler.api.enums;
 
-public interface AppProfile {
-    String TEST = "test";
-    String PROD = "prod";
-    String JUNIT = "junit";
+public final class AppProfile {
+    public static final String TEST = "test";
+    public static final String PROD = "prod";
+    public static final String JUNIT = "junit";
+
+    private AppProfile() {
+    }
 }

@@ -1,5 +1,10 @@
 package eu.jirifrank.springler.api.enums;
 
-public interface ApplicationLocation {
-    String ENTITIES = "eu.jirifrank.springler.api.entity";
+public final class ApplicationLocation {
+
+    public static final String BASE_PACKAGE = "eu.jirifrank.springler";
+    public static final String ENTITIES = "eu.jirifrank.springler.api.entity";
+
+    private ApplicationLocation() {
+    }
 }

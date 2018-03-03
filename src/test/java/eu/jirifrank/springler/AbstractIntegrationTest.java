@@ -14,7 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @SpringBootTest(classes = Application.class)
 @AutoConfigureMockMvc
 @ActiveProfiles(AppProfile.JUNIT)
-public class AbstractIntegrationTest {
+public abstract class AbstractIntegrationTest {
 
     @Autowired
     protected MockMvc mockMvc;

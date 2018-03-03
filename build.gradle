@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        springBootVersion = '2.0.0.RC2'
+        springBootVersion = '2.0.0.RELEASE'
     }
     repositories {
         mavenCentral()
@@ -32,28 +32,31 @@ repositories {
     maven { url "https://repo.spring.io/milestone" }
 }
 
+lombok {
+    version = '1.16.20'
+}
+
 ext {
-    springCloudVersion = 'Finchley.BUILD-SNAPSHOT'
+
 }
 
 dependencies {
     compile(
-            'org.springframework.cloud:spring-cloud-starter',
             'org.springframework.boot:spring-boot-starter-web',
             'org.springframework.boot:spring-boot-starter-data-jpa',
             'org.postgresql:postgresql:42.2.1',
             'javax.xml.bind:jaxb-api:2.3.0',
-
+            'com.h2database:h2:1.4.196',
+            'org.springframework.retry:spring-retry'
     )
 
     testCompile(
             'org.springframework.boot:spring-boot-starter-test',
-             'org.hsqldb:hsqldb:2.4.0'
     )
 }
 
 dependencyManagement {
-    imports {
-        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
-    }
+//    imports {
+//        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+//    }
 }

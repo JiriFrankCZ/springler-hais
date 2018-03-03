@@ -1,8 +1,10 @@
 package eu.jirifrank.springler.api.entity;
 
+import eu.jirifrank.springler.api.enums.SensorType;
 import lombok.Data;
 
 import javax.persistence.*;
+import java.util.Date;
 
 @Entity
 @Data
@@ -13,7 +15,12 @@ public class SensorRead {
     private long id;
 
     @Column
-    private String name;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date date;
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private SensorType sensorType;
 
     @Column
     private String rarityLevel;
