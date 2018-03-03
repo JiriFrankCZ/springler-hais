@@ -44,6 +44,7 @@ dependencies {
     compile(
             'org.springframework.boot:spring-boot-starter-web',
             'org.springframework.boot:spring-boot-starter-data-jpa',
+            'org.springframework.boot:spring-boot-starter-mail',
             'org.postgresql:postgresql:42.2.1',
             'javax.xml.bind:jaxb-api:2.3.0',
             'com.h2database:h2:1.4.196',

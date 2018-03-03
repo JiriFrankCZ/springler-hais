@@ -1,6 +1,7 @@
 package eu.jirifrank.springler.service.realtime;
 
 import eu.jirifrank.springler.api.model.weather.WeatherForecast;
+import eu.jirifrank.springler.service.notification.NotificationService;
 import eu.jirifrank.springler.service.weather.WeatherService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,9 @@ import javax.annotation.PostConstruct;
 @Service
 @Slf4j
 public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Value("${weather.rain.threshold}")
     private Double rainProbabilityThreshold;
