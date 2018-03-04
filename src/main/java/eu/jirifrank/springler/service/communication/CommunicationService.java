@@ -13,5 +13,5 @@ public interface CommunicationService {
     /**
      * Writes action for processing in queue
      */
-    void writeAction(Action action) throws InterruptedException;
+    void writeAction(Action action);
 }
