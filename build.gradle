@@ -36,6 +36,10 @@ lombok {
     version = '1.16.20'
 }
 
+jar {
+    baseName = 'springler'
+}
+
 ext {
 
 }
