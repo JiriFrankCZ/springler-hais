@@ -48,7 +48,8 @@ dependencies {
             'org.postgresql:postgresql:42.2.1',
             'javax.xml.bind:jaxb-api:2.3.0',
             'com.h2database:h2:1.4.196',
-            'org.springframework.retry:spring-retry'
+            'org.springframework.retry:spring-retry',
+
     )
 
     testCompile(
