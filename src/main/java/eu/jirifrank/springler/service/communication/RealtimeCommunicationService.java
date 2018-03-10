@@ -4,6 +4,7 @@ import eu.jirifrank.springler.api.action.Action;
 import eu.jirifrank.springler.api.exceptions.ConcurrentQueueProcessingException;
 import eu.jirifrank.springler.service.notification.NotificationService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -58,5 +59,9 @@ public class RealtimeCommunicationService implements CommunicationService {
                             " Current number of elements: " + actionsQueue.size() + "."
             );
         }
+    }
+
+    @RabbitListener(queues = {"messarurementsExchangeName"})
+    public void receiveMessageFromFanout1(String message) {
     }
 }
