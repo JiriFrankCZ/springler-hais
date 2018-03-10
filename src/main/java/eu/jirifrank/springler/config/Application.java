@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import javax.annotation.PostConstruct;
 
 @EnableAsync
-@EnableJpaRepositories
+@EnableJpaRepositories(basePackages = ApplicationLocation.REPOSITORIES)
 @EnableRetry
 @EnableScheduling
 @EntityScan(basePackages = ApplicationLocation.ENTITIES)
