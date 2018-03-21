@@ -1,5 +1,6 @@
 package eu.jirifrank.springler.api.request;
 
+import eu.jirifrank.springler.api.enums.Location;
 import eu.jirifrank.springler.api.enums.SensorType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,5 +14,5 @@ import lombok.NoArgsConstructor;
 public class SensorReadRequest {
     private SensorType sensorType;
     private Double value;
-    private String location;
+    private Location location;
 }

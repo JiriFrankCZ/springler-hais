@@ -7,6 +7,7 @@ public final class ApplicationLocation {
     public static final String REPOSITORIES = "eu.jirifrank.springler.service.persistence";
 
     public static final String MQ_QUEUE_MEASUREMENTS = "springler.sensor.measurings";
+    public static final String MQ_QUEUE_ACTIONS = "springler.actions";
 
     private ApplicationLocation() {
     }
