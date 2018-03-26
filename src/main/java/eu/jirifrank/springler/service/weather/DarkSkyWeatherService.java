@@ -72,7 +72,7 @@ public class DarkSkyWeatherService implements WeatherService {
 
             return weatherForecast;
         } else {
-            log.error("Error occured during call of Dark Sky API.", responseEntity.getStatusCode());
+            log.error("Error ocurred during call of Dark Sky API.", responseEntity.getStatusCode());
             return null;
         }
     }

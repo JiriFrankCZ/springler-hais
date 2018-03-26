@@ -2,11 +2,9 @@ package eu.jirifrank.springler.service.realtime;
 
 import eu.jirifrank.springler.AbstractIntegrationTest;
 import eu.jirifrank.springler.api.entity.Irrigation;
-import eu.jirifrank.springler.api.entity.IrrigationOverview;
 import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.Location;
 import eu.jirifrank.springler.api.enums.SensorType;
-import eu.jirifrank.springler.service.persistence.IrrigationOverviewRepository;
 import eu.jirifrank.springler.service.persistence.IrrigationRepository;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import org.junit.Test;
@@ -14,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Arrays;
 import java.util.Date;
-
-import static org.junit.Assert.*;
 
 /**
  * Popis tridy
@@ -69,6 +65,7 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
                 .builder()
                 .duration(15.0)
                 .location(Location.COVERED)
+                .correction(-1.0)
                 .date(new Date())
                 .sensorReads(Arrays.asList(sensorRead))
                 .build();
