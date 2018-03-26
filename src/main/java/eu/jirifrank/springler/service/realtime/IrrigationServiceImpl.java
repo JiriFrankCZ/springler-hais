@@ -10,22 +10,41 @@ import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.yaml.snakeyaml.util.ArrayUtils;
 
+import java.time.Instant;
+import java.time.temporal.TemporalAmount;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+
+import static java.time.temporal.ChronoUnit.HOURS;
 
 @Service
 @Slf4j
 public class IrrigationServiceImpl implements IrrigationService {
+
+    private static final List<Location> LOCATIONS = ArrayUtils.toUnmodifiableList(
+            Location.OPENED,
+            Location.COVERED
+    );
 
     @Autowired
     private CommunicationService communicationService;
 
     @Autowired
     private RealtimeWeatherService weatherService;
+
+    @Value("${watering.soil.moisture.ideal}")
+    private Double soilMoistureIdeal;
+
+    @Value("${watering.soil.moisture.threshold}")
+    private Double soilMoistureThreshold;
 
     private Double humidity = 50.00;
 
@@ -34,10 +53,10 @@ public class IrrigationServiceImpl implements IrrigationService {
     private Double temperature = 20.00;
 
     @Autowired
-    private SensorReadRepository sensorReadRepository;
+    private IrrigationRepository irrigationRepository;
 
     @Autowired
-    private IrrigationRepository irrigationRepository;
+    private TaskScheduler taskScheduler;
 
     @Override
     public void doWatering(long duration) {
@@ -52,14 +71,43 @@ public class IrrigationServiceImpl implements IrrigationService {
 
     @Scheduled(fixedDelay = 15 * 60 * 1000)
     public void wateringCheck() {
+        if(!weatherService.isRainPredicted()){
+            LOCATIONS.forEach(location -> {
+                Optional<Irrigation> similarIrrigation = findSimilar(location);
+                Irrigation irrigation = Irrigation.builder()
+                        .date(new Date())
+                        .location(location)
+                        .build();
 
+                similarIrrigation.ifPresent(irrigationPast -> irrigation.setDuration(irrigation.getDuration() + irrigation.getCorrection()));
+
+                taskScheduler.schedule(() -> learnLesson(irrigation), Instant.now().plus(1l, HOURS));
+            });
+        }
     }
 
-    public Optional<Irrigation> findSimilar(Location location){
+    private void learnLesson(Irrigation irrigation) {
+        log.info("Evaluating effectivity of irrigation {}.", irrigation);
+        if(soilMoisture > (soilMoistureIdeal + soilMoistureThreshold)){
+            log.info("Decrease irrigation length.");
+        } else if(soilMoisture > (soilMoistureIdeal - soilMoistureThreshold)){
+            log.info("Increase irrigation length.");
+        }else{
+            log.info("Irrigation was efficient.");
+        }
+        log.info("Evaluation finished.");
+    }
+
+    private Optional<Irrigation> findSimilar(Location location){
         List<Irrigation> irrigationList = irrigationRepository.findByMonthAndLocation(location);
 
         return Optional.ofNullable(irrigationList.stream()
-                .sorted(Comparator.comparing(this::calculateScore))
+                .map(irrigation -> {
+                    irrigation.setScore(calculateScore(irrigation));
+                    return irrigation;
+                })
+                .filter(irrigation -> irrigation.getScore() > 30)
+                .sorted(Comparator.comparing(Irrigation::getScore))
                 .findFirst()
                 .orElse(irrigationRepository.findFirstByLocationOrderByDateDesc(location)));
     }

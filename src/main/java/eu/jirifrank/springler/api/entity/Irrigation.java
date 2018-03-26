@@ -38,4 +38,7 @@ public class Irrigation {
     @Column
     @Temporal(TemporalType.TIMESTAMP)
     private Date date;
+
+    @Transient
+    private Double score;
 }

@@ -75,6 +75,6 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
 
         irrigationRepository.save(irrigation);
 
-        irrigationService.findSimilar(Location.COVERED);
+        irrigationService.wateringCheck();
     }
 }
