@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -24,13 +25,17 @@ public class Irrigation {
     @OneToMany(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY)
     private List<SensorRead> sensorReads;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<WateringLearning> wateringLearnings;
+    @Column
+    @Enumerated(EnumType.STRING)
+    private Location location;
+
+    @Column
+    private Double duration;
 
     @Column
     private Double correction;
 
     @Column
-    @Enumerated(EnumType.STRING)
-    private Location location;
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date date;
 }

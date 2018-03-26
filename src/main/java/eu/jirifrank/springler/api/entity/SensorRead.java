@@ -36,4 +36,6 @@ public class SensorRead {
     @Column
     private Double value;
 
+    @ManyToOne(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY, optional = true)
+    private Irrigation irrigation;
 }

@@ -29,7 +29,7 @@ public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
     @PostConstruct
     public void init() {
         log.info("Starting updating weather forecast.");
-        weatherForecast = weatherService.getForecast();
+//        weatherForecast = weatherService.getForecast();
         log.info("Weather forecast is up to date.");
     }
 

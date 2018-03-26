@@ -17,7 +17,7 @@ public class EmailNotificationService implements NotificationService {
     @Value("${notifications.email}")
     private String[] emailAddresses;
 
-    @Autowired
+    @Autowired(required = false)
     private JavaMailSender emailSender;
 
     @Override
