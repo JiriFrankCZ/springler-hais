@@ -1,9 +1,7 @@
 package eu.jirifrank.springler.service.persistence;
 
 import eu.jirifrank.springler.api.entity.Irrigation;
-import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.Location;
-import eu.jirifrank.springler.api.enums.SensorType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
@@ -17,7 +15,8 @@ public interface IrrigationRepository extends PagingAndSortingRepository<Irrigat
     @Query(value = "select i from Irrigation i " +
             "join fetch i.sensorReads s " +
             "where month(i.date) = month(current_date()) and " +
-            "i.location = :location")
+            "i.location = :location and " +
+            "i.correction is not null")
     List<Irrigation> findByMonthAndLocation(@Param("location") Location location);
 
     Irrigation findFirstByLocationOrderByDateDesc(Location location);

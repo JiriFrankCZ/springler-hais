@@ -72,6 +72,63 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
 
         irrigationRepository.save(irrigation);
 
+
+        sensorRead = SensorRead.builder()
+                .sensorType(SensorType.HUMIDITY)
+                .date(new Date())
+                .location(Location.COVERED)
+                .value(10.0)
+                .build();
+
+        sensorReadRepository.save(sensorRead);
+
+        sensorRead = SensorRead.builder()
+                .sensorType(SensorType.SOIL_MOISTURE)
+                .date(new Date())
+                .location(Location.COVERED)
+                .value(10.0)
+                .build();
+
+        sensorReadRepository.save(sensorRead);
+
+        sensorRead = SensorRead.builder()
+                .sensorType(SensorType.TEMPERATURE)
+                .date(new Date())
+                .location(Location.COVERED)
+                .value(10.0)
+                .build();
+
+        sensorReadRepository.save(sensorRead);
+
+
+        sensorRead = SensorRead.builder()
+                .sensorType(SensorType.HUMIDITY)
+                .date(new Date())
+                .location(Location.OPENED)
+                .value(10.0)
+                .build();
+
+        sensorReadRepository.save(sensorRead);
+
+        sensorRead = SensorRead.builder()
+                .sensorType(SensorType.SOIL_MOISTURE)
+                .date(new Date())
+                .location(Location.OPENED)
+                .value(10.0)
+                .build();
+
+        sensorReadRepository.save(sensorRead);
+
+        sensorRead = SensorRead.builder()
+                .sensorType(SensorType.TEMPERATURE)
+                .date(new Date())
+                .location(Location.OPENED)
+                .value(10.0)
+                .build();
+
+        sensorReadRepository.save(sensorRead);
+
+        irrigationService.reloadMeasurement();
         irrigationService.wateringCheck();
     }
 }

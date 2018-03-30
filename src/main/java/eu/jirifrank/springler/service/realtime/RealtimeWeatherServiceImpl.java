@@ -44,4 +44,14 @@ public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
         double rainProbability = weatherForecast.getRainProbability();
         return rainProbability > rainProbabilityThreshold;
     }
+
+    @Override
+    public Double getRainProbability() {
+        return weatherForecast.getRainProbability();
+    }
+
+    @Override
+    public Double getForecastedTemperature() {
+        return weatherForecast.getMaxTemperature();
+    }
 }

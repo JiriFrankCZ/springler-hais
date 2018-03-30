@@ -26,6 +26,12 @@ public class Irrigation {
     private List<SensorRead> sensorReads;
 
     @Column
+    private Double rainProbability;
+
+    @Column
+    private Double temperatureForecast;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private Location location;
 
@@ -39,6 +45,7 @@ public class Irrigation {
     @Temporal(TemporalType.TIMESTAMP)
     private Date date;
 
-    @Transient
-    private Double score;
+    @Column
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date updated;
 }

@@ -1,5 +1,6 @@
 package eu.jirifrank.springler.service.realtime;
 
+import eu.jirifrank.springler.api.action.WateringData;
 import eu.jirifrank.springler.api.entity.Irrigation;
 import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.Location;
@@ -7,6 +8,7 @@ import eu.jirifrank.springler.api.enums.SensorType;
 import eu.jirifrank.springler.api.model.watering.ScoredIrrigation;
 import eu.jirifrank.springler.service.communication.CommunicationService;
 import eu.jirifrank.springler.service.persistence.IrrigationRepository;
+import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,9 +30,11 @@ public class IrrigationServiceImpl implements IrrigationService {
             Location.OPENED,
             Location.COVERED
     );
-    private static final double SOIL_MOISTURE_WEIGHT = 0.9;
-    private static final double TEMPERATURE_WEIGHT = 0.7;
-    private static final double HUMIDITY_WEIGHT = 0.5;
+    private static final double SOIL_MOISTURE_WEIGHT = 0.3;
+    private static final double TEMPERATURE_WEIGHT = 0.1;
+    private static final double HUMIDITY_WEIGHT = 0.1;
+    private static final double RAIN_PROBABILITY_WEIGHT = 0.3;
+    private static final double TEMPERATURE_FORECAST_WEIGHT = 0.2;
 
     @Value("${watering.soil.moisture.ideal}")
     private Double soilMoistureIdeal;
@@ -41,14 +45,17 @@ public class IrrigationServiceImpl implements IrrigationService {
     @Value("${watering.duration.default}")
     private Double defaultWateringDuration;
 
-    private SensorRead humidity;
+    private List<SensorRead> humidityList;
 
-    private SensorRead soilMoisture;
+    private List<SensorRead> soilMoistureList;
 
-    private SensorRead temperature;
+    private List<SensorRead> temperatureList;
 
     @Autowired
     private IrrigationRepository irrigationRepository;
+
+    @Autowired
+    private SensorReadRepository sensorReadRepository;
 
     @Autowired
     private TaskScheduler taskScheduler;
@@ -65,36 +72,63 @@ public class IrrigationServiceImpl implements IrrigationService {
         // communicationService.writeAction(new Action(IOTAction.WATER, new WateringData(duration)));
     }
 
-    @Scheduled(fixedDelay = 15 * 60 * 1000)
+    @Scheduled(fixedDelay = 1 * 60 * 1000)
     public void reloadMeasurement() {
-
+        log.debug("Reloading actual sensor readings per location.");
+        humidityList = sensorReadRepository.findLatestByType(SensorType.HUMIDITY);
+        temperatureList = sensorReadRepository.findLatestByType(SensorType.TEMPERATURE);
+        soilMoistureList = sensorReadRepository.findLatestByType(SensorType.SOIL_MOISTURE);
     }
 
-    @Scheduled(fixedDelay = 30 * 60 * 1000)
+    @Scheduled(fixedDelay = 15 * 60 * 1000)
     public void wateringCheck() {
-        if (!weatherService.isRainPredicted() || soilMoisture.getValue() < (soilMoistureIdeal - soilMoistureThreshold)) {
-            LOCATIONS.forEach(location -> {
-                Optional<Irrigation> similarIrrigation = findSimilarOrLast(location);
-                Irrigation irrigation = Irrigation.builder()
-                        .date(new Date())
-                        .location(location)
-                        .sensorReads(Arrays.asList(humidity, soilMoisture, temperature))
-                        .duration(10.0)
-                        .build();
+        LOCATIONS.forEach(location -> {
+            if (!weatherService.isRainPredicted() || filterSensorReadByLocation(soilMoistureList, location).getValue() < (soilMoistureIdeal - soilMoistureThreshold)) {
+                Optional<ScoredIrrigation> similarIrrigation = findSimilarOrLast(location);
 
-                similarIrrigation.ifPresent(irrigationPast -> {
-                    final double correction = irrigationPast.getCorrection() != null ? irrigationPast.getCorrection() : 0;
-                    final double duration = irrigationPast.getDuration() + correction;
-                    irrigation.setDuration(duration);
-                });
+                Irrigation irrigation;
+
+                if (similarIrrigation.isPresent() && similarIrrigation.get().getScore() == 0.0) {
+                    irrigation = similarIrrigation.get().getIrrigation();
+                    irrigation.setSensorReads(Arrays.asList(
+                            filterSensorReadByLocation(humidityList, location),
+                            filterSensorReadByLocation(soilMoistureList, location),
+                            filterSensorReadByLocation(temperatureList, location)
+                    ));
+                    irrigation.setUpdated(new Date());
+                    irrigation.setDuration(irrigation.getDuration() + irrigation.getCorrection());
+                } else {
+                    irrigation = Irrigation.builder()
+                            .date(new Date())
+                            .location(location)
+                            .sensorReads(Arrays.asList(
+                                    filterSensorReadByLocation(humidityList, location),
+                                    filterSensorReadByLocation(soilMoistureList, location),
+                                    filterSensorReadByLocation(temperatureList, location)
+                            ))
+                            .temperatureForecast(weatherService.getForecastedTemperature())
+                            .rainProbability(weatherService.getRainProbability())
+                            .duration(1.0)
+                            .build();
+
+                    similarIrrigation.ifPresent(scoredIrrigationPast -> {
+                        Irrigation irrigationPast = scoredIrrigationPast.getIrrigation();
+                        irrigation.setDuration(irrigationPast.getDuration() + irrigationPast.getCorrection());
+                    });
+                }
 
                 irrigationRepository.save(irrigation);
 
-                taskScheduler.schedule(() -> backpropagateResults(irrigation), Instant.now().plus(20l, MINUTES));
-            });
-        } else {
-            log.info("Expected rain bypassed watering.");
-        }
+                WateringData wateringData = new WateringData(irrigation.getDuration(), irrigation.getLocation());
+                communicationService.sendActionMessage(wateringData);
+
+                taskScheduler.schedule(() -> backpropagateResults(irrigation), Instant.now().plus(10l, MINUTES));
+
+                log.info("Scheduled watering {} and submitted for processing.", wateringData);
+            } else {
+                log.info("Expected rain bypassed watering.");
+            }
+        });
     }
 
     private void backpropagateResults(Irrigation irrigation) {
@@ -106,7 +140,7 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         double correctionCoefficient = 0.0;
 
-        double soilMositureValue = soilMoisture.getValue();
+        double soilMositureValue = filterSensorReadByLocation(soilMoistureList, irrigation.getLocation()).getValue();
         if (soilMositureValue > topBoundary) {
             correctionCoefficient = topBoundary / soilMositureValue;
         } else if (soilMositureValue < bottomBoundary) {
@@ -128,12 +162,22 @@ public class IrrigationServiceImpl implements IrrigationService {
     private Optional<ScoredIrrigation> findSimilarOrLast(Location location) {
         List<Irrigation> irrigationList = irrigationRepository.findByMonthAndLocation(location);
 
-        return Optional.ofNullable(irrigationList.stream()
+        Optional<ScoredIrrigation> choosenIrrigation = irrigationList.stream()
                 .map(irrigation -> new ScoredIrrigation(irrigation, calculateScore(irrigation)))
-                .filter(irrigation -> irrigation.getScore() > 30)
-                .sorted(Comparator.comparing().reversed())
-                .findFirst()
-                .orElse(new ScoredIrrigation(irrigationRepository.findFirstByLocationOrderByDateDesc(location), null));
+                .filter(irrigation -> irrigation.getScore() < 30)
+                .sorted(Comparator.comparing(ScoredIrrigation::getScore).reversed())
+                .findFirst();
+
+        if (choosenIrrigation.isPresent()) {
+            return choosenIrrigation;
+        } else {
+            Irrigation irrigation = irrigationRepository.findFirstByLocationOrderByDateDesc(location);
+            if (irrigation == null) {
+                return Optional.empty();
+            } else {
+                return Optional.of(new ScoredIrrigation(irrigation, null));
+            }
+        }
     }
 
     private Double calculateScore(Irrigation irrigation) {
@@ -143,20 +187,41 @@ public class IrrigationServiceImpl implements IrrigationService {
         irrigation.getSensorReads().stream()
                 .filter(sensorRead -> sensorRead.getSensorType().equals(SensorType.SOIL_MOISTURE))
                 .findFirst()
-                .ifPresent(sensorRead -> score[0] += SOIL_MOISTURE_WEIGHT * Math.abs(sensorRead.getValue() - soilMoisture.getValue()));
+                .ifPresent(sensorRead -> {
+                    SensorRead sensorReadActual = filterSensorReadByLocation(soilMoistureList, sensorRead.getLocation());
+                    score[0] += SOIL_MOISTURE_WEIGHT * Math.abs(sensorRead.getValue() - sensorReadActual.getValue());
+                });
 
         irrigation.getSensorReads().stream()
                 .filter(sensorRead -> sensorRead.getSensorType().equals(SensorType.TEMPERATURE))
                 .findFirst()
-                .ifPresent(sensorRead -> score[0] += TEMPERATURE_WEIGHT * Math.abs(sensorRead.getValue() - temperature.getValue()));
+                .ifPresent(sensorRead -> {
+                    SensorRead sensorReadActual = filterSensorReadByLocation(temperatureList, sensorRead.getLocation());
+                    score[0] += TEMPERATURE_WEIGHT * Math.abs(sensorRead.getValue() - sensorReadActual.getValue());
+                });
 
         irrigation.getSensorReads().stream()
                 .filter(sensorRead -> sensorRead.getSensorType().equals(SensorType.HUMIDITY))
                 .findFirst()
-                .ifPresent(sensorRead -> score[0] += HUMIDITY_WEIGHT * Math.abs(sensorRead.getValue() - humidity.getValue()));
+                .ifPresent(sensorRead -> {
+                    SensorRead sensorReadActual = filterSensorReadByLocation(humidityList, sensorRead.getLocation());
+                    score[0] += HUMIDITY_WEIGHT * Math.abs(sensorRead.getValue() - sensorReadActual.getValue());
+                });
+
+
+        score[0] += RAIN_PROBABILITY_WEIGHT * Math.abs(irrigation.getRainProbability() - weatherService.getRainProbability());
+
+        score[0] += TEMPERATURE_FORECAST_WEIGHT * Math.abs(irrigation.getTemperatureForecast() - weatherService.getForecastedTemperature());
 
         log.debug("Irrigation {} has score: {}.", irrigation.toString(), score[0]);
 
         return score[0];
+    }
+
+    private SensorRead filterSensorReadByLocation(List<SensorRead> sensorReadList, Location location) {
+        return sensorReadList.stream()
+                .filter(sensorRead -> sensorRead.getLocation().equals(location))
+                .findFirst()
+                .get();
     }
 }
