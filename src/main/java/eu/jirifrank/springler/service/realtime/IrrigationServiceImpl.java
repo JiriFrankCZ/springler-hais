@@ -1,8 +1,10 @@
 package eu.jirifrank.springler.service.realtime;
 
+import eu.jirifrank.springler.api.action.Action;
 import eu.jirifrank.springler.api.action.WateringData;
 import eu.jirifrank.springler.api.entity.Irrigation;
 import eu.jirifrank.springler.api.entity.SensorRead;
+import eu.jirifrank.springler.api.enums.DeviceAction;
 import eu.jirifrank.springler.api.enums.Location;
 import eu.jirifrank.springler.api.enums.SensorType;
 import eu.jirifrank.springler.api.model.watering.ScoredIrrigation;
@@ -69,7 +71,7 @@ public class IrrigationServiceImpl implements IrrigationService {
     @Override
     public void doWatering(long duration) {
 
-        // communicationService.writeAction(new Action(IOTAction.WATER, new WateringData(duration)));
+        // communicationService.writeAction(new Action(DeviceAction.WATER, new WateringData(duration)));
     }
 
     @Scheduled(fixedDelay = 1 * 60 * 1000)
@@ -120,7 +122,8 @@ public class IrrigationServiceImpl implements IrrigationService {
                 irrigationRepository.save(irrigation);
 
                 WateringData wateringData = new WateringData(irrigation.getDuration(), irrigation.getLocation());
-                communicationService.sendActionMessage(wateringData);
+                Action action = new Action(DeviceAction.WATER, wateringData);
+                communicationService.sendActionMessage(action);
 
                 taskScheduler.schedule(() -> backpropagateResults(irrigation), Instant.now().plus(10l, MINUTES));
 

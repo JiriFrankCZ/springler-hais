@@ -2,7 +2,7 @@ package eu.jirifrank.springler.service.communication;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.jirifrank.springler.api.action.ActionObject;
+import eu.jirifrank.springler.api.action.Action;
 import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.ApplicationLocation;
 import eu.jirifrank.springler.api.request.SensorReadRequest;
@@ -46,14 +46,14 @@ public class RealtimeCommunicationService implements CommunicationService {
     }
 
     @Override
-    public void sendActionMessage(ActionObject actionObject) {
-        byte[] serializedAction = serializeToByteArray(actionObject);
+    public void sendActionMessage(Action action) {
+        byte[] serializedAction = serializeToByteArray(action);
         rabbitTemplate.convertAndSend(ApplicationLocation.MQ_QUEUE_ACTIONS, "", serializedAction);
     }
 
-    private byte[] serializeToByteArray(ActionObject actionObject) {
+    private byte[] serializeToByteArray(Action action) {
         try {
-            return OBJECT_MAPPER.writeValueAsBytes(actionObject);
+            return OBJECT_MAPPER.writeValueAsBytes(action);
         } catch (JsonProcessingException e) {
             throw new IllegalArgumentException("Not valid object passed for serialization to byte array.", e);
         }

@@ -1,8 +1,7 @@
 package eu.jirifrank.springler.service.communication;
 
-import eu.jirifrank.springler.api.action.ActionObject;
+import eu.jirifrank.springler.api.action.Action;
 
 public interface CommunicationService {
-
-    void sendActionMessage(ActionObject actionObject);
+    void sendActionMessage(Action action);
 }
