@@ -4,7 +4,6 @@ import eu.jirifrank.springler.api.action.Action;
 import eu.jirifrank.springler.api.action.LightData;
 import eu.jirifrank.springler.api.enums.DeviceAction;
 import eu.jirifrank.springler.service.communication.CommunicationService;
-import eu.jirifrank.springler.service.weather.WeatherService;
 import eu.jirifrank.springler.util.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +42,7 @@ public class LedLightService implements LightService {
     private TaskScheduler taskScheduler;
 
     @Autowired
-    private WeatherService weatherService;
+    private RealtimeWeatherService realtimeWeatherService;
 
     @PostConstruct
     public void init() {
@@ -52,7 +51,7 @@ public class LedLightService implements LightService {
 
         if (automaticLightning) {
             log.info("Automatic lightning enabled, scheduling start/stop sequences.");
-            LocalDateTime sunset = weatherService.getForecast().getSunset();
+            LocalDateTime sunset = realtimeWeatherService.getSunset();
 
             Date startTime = TimeUtils.fromDateTimeToDate(sunset);
             taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
@@ -85,15 +84,17 @@ public class LedLightService implements LightService {
 
     private void scheduleStartLightAndExecute() {
         startLight(rColor, gColor, bColor);
-        Date startTime = TimeUtils.fromDateTimeToDate(weatherService.getForecast().getSunset());
+        Date startTime = TimeUtils.fromDateTimeToDate(realtimeWeatherService.getSunset());
         taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
+        log.info("Next start of lightning is scheduled on {}.", startTime);
     }
 
     private void scheduleStopLightAndExecute() {
         stopLight();
         Date stopTime = TimeUtils.fromDateTimeToDate(
-                weatherService.getForecast().getSunset().plusHours(automaticLightningDuration)
+                realtimeWeatherService.getSunset().plusHours(automaticLightningDuration)
         );
         taskScheduler.schedule(this::scheduleStopLightAndExecute, stopTime);
+        log.info("Next stop of lightning is scheduled on {}.", stopTime);
     }
 }

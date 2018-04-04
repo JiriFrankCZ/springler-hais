@@ -222,6 +222,10 @@ public class IrrigationServiceImpl implements IrrigationService {
     }
 
     private SensorRead filterSensorReadByLocation(List<SensorRead> sensorReadList, Location location) {
+        if (sensorReadList.isEmpty()) {
+            return null;
+        }
+
         return sensorReadList.stream()
                 .filter(sensorRead -> sensorRead.getLocation().equals(location))
                 .findFirst()
