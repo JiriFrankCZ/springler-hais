@@ -48,7 +48,7 @@ public class RealtimeCommunicationService implements CommunicationService {
     @Override
     public void sendActionMessage(Action action) {
         byte[] serializedAction = serializeToByteArray(action);
-        rabbitTemplate.convertAndSend(ApplicationLocation.MQ_QUEUE_ACTIONS, "", serializedAction);
+        rabbitTemplate.convertAndSend(ApplicationLocation.MQ_QUEUE_DEFAULT_EXCHANGE, ApplicationLocation.MQ_QUEUE_ACTIONS, serializedAction);
     }
 
     private byte[] serializeToByteArray(Action action) {
