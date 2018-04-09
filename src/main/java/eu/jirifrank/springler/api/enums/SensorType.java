@@ -6,4 +6,6 @@ public enum SensorType {
     HUMIDITY,
     SOIL_MOISTURE,
     RAIN,
+    SOLAR_CURRENT,
+    SOLAR_VOLTAGE
 }
