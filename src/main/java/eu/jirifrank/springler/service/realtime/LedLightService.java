@@ -84,7 +84,7 @@ public class LedLightService implements LightService {
 
     private void scheduleStartLightAndExecute() {
         startLight(rColor, gColor, bColor);
-        Date startTime = TimeUtils.fromDateTimeToDate(realtimeWeatherService.getSunset());
+        Date startTime = TimeUtils.fromDateTimeToDate(realtimeWeatherService.getSunset().plusDays(1));
         taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
         log.info("Next start of lightning is scheduled on {}.", startTime);
     }
@@ -92,7 +92,7 @@ public class LedLightService implements LightService {
     private void scheduleStopLightAndExecute() {
         stopLight();
         Date stopTime = TimeUtils.fromDateTimeToDate(
-                realtimeWeatherService.getSunset().plusHours(automaticLightningDuration)
+                realtimeWeatherService.getSunset().plusHours(automaticLightningDuration).plusDays(1)
         );
         taskScheduler.schedule(this::scheduleStopLightAndExecute, stopTime);
         log.info("Next stop of lightning is scheduled on {}.", stopTime);
