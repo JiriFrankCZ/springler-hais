@@ -9,6 +9,7 @@ import eu.jirifrank.springler.api.enums.Location;
 import eu.jirifrank.springler.api.enums.SensorType;
 import eu.jirifrank.springler.api.model.watering.ScoredIrrigation;
 import eu.jirifrank.springler.service.communication.CommunicationService;
+import eu.jirifrank.springler.service.logging.LoggingService;
 import eu.jirifrank.springler.service.persistence.IrrigationRepository;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -68,10 +69,16 @@ public class IrrigationServiceImpl implements IrrigationService {
     @Autowired
     private RealtimeWeatherService weatherService;
 
-    @Override
-    public void doWatering(long duration) {
+    @Autowired
+    private LoggingService loggingService;
 
-        // communicationService.writeAction(new Action(DeviceAction.WATER, new WateringData(duration)));
+    @Override
+    public void doWatering(Double duration, Location location) {
+        log.debug("Manual watering triggered for location {} and duration {}s.", location, duration);
+
+        communicationService.sendActionMessage(new Action(DeviceAction.WATER, new WateringData(duration, location)));
+
+        loggingService.log("Watering on demand for " + location + "has been scheduled.");
     }
 
     @Scheduled(fixedDelay = 1 * 60 * 1000)
@@ -90,24 +97,17 @@ public class IrrigationServiceImpl implements IrrigationService {
 
                 Irrigation irrigation;
 
-                if (similarIrrigation.isPresent() && similarIrrigation.get().getScore() == 0.0) {
+                if (similarIrrigation.isPresent() && similarIrrigation.get().getScore() != null) {
+                    log.debug("Perfect match for irrigation.");
                     irrigation = similarIrrigation.get().getIrrigation();
-                    irrigation.setSensorReads(Arrays.asList(
-                            filterSensorReadByLocation(humidityList, location),
-                            filterSensorReadByLocation(soilMoistureList, location),
-                            filterSensorReadByLocation(temperatureList, location)
-                    ));
                     irrigation.setUpdated(new Date());
                     irrigation.setDuration(irrigation.getDuration() + irrigation.getCorrection());
-                } else {
+                 } else {
+                    log.debug("Not similar irrigation found. Starting for given combination from scratch.");
                     irrigation = Irrigation.builder()
-                            .date(new Date())
+                            .created(new Date())
                             .location(location)
-                            .sensorReads(Arrays.asList(
-                                    filterSensorReadByLocation(humidityList, location),
-                                    filterSensorReadByLocation(soilMoistureList, location),
-                                    filterSensorReadByLocation(temperatureList, location)
-                            ))
+                            .sensorReads(getSensorReads(location))
                             .temperatureForecast(weatherService.getForecastedTemperature())
                             .rainProbability(weatherService.getRainProbability())
                             .duration(1.0)
@@ -128,10 +128,22 @@ public class IrrigationServiceImpl implements IrrigationService {
                 taskScheduler.schedule(() -> backpropagateResults(irrigation), Instant.now().plus(10l, MINUTES));
 
                 log.info("Scheduled watering {} and submitted for processing.", wateringData);
+                loggingService.log("Watering for " + location + " was scheduled with duration " + irrigation.getDuration() + "s.");
             } else {
                 log.info("Expected rain bypassed watering.");
+                loggingService.log("Watering for " + location + " needed, but expected rain ["
+                        + weatherService.getRainProbability() + "] bypassed watering."
+                );
             }
         });
+    }
+
+    private List<SensorRead> getSensorReads(Location location) {
+        return Arrays.asList(
+                filterSensorReadByLocation(humidityList, location),
+                filterSensorReadByLocation(soilMoistureList, location),
+                filterSensorReadByLocation(temperatureList, location)
+        );
     }
 
     private void backpropagateResults(Irrigation irrigation) {
@@ -139,7 +151,6 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         final double topBoundary = soilMoistureIdeal + soilMoistureThreshold;
         final double bottomBoundary = soilMoistureIdeal - soilMoistureThreshold;
-
 
         double correctionCoefficient = 0.0;
 
@@ -159,7 +170,10 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         irrigationRepository.save(irrigation);
 
-        log.info("Evaluation finished. Correction has been set to {}s.", irrigation.getCorrection());
+        log.info("Evaluation finished. Irrigation {} correction has been set to {}s.", irrigation, irrigation.getCorrection());
+        loggingService.log("Learning by backpropagation of irrigation[" + irrigation.getId() + "] was updated by " +
+                irrigation.getCorrection() + "."
+        );
     }
 
     private Optional<ScoredIrrigation> findSimilarOrLast(Location location) {
@@ -174,7 +188,7 @@ public class IrrigationServiceImpl implements IrrigationService {
         if (choosenIrrigation.isPresent()) {
             return choosenIrrigation;
         } else {
-            Irrigation irrigation = irrigationRepository.findFirstByLocationOrderByDateDesc(location);
+            Irrigation irrigation = irrigationRepository.findFirstByLocationOrderByCreatedDesc(location);
             if (irrigation == null) {
                 return Optional.empty();
             } else {

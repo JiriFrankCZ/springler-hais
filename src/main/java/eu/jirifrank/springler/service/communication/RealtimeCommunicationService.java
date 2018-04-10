@@ -6,6 +6,8 @@ import eu.jirifrank.springler.api.action.Action;
 import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.ApplicationLocation;
 import eu.jirifrank.springler.api.request.SensorReadRequest;
+import eu.jirifrank.springler.service.logging.LoggingService;
+import eu.jirifrank.springler.service.persistence.LogRepository;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
@@ -23,11 +25,14 @@ public class RealtimeCommunicationService implements CommunicationService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    @Autowired
+    @Autowired(required = false)
     private RabbitTemplate rabbitTemplate;
 
     @Autowired
     private SensorReadRepository sensorReadRepository;
+
+    @Autowired
+    private LoggingService loggingService;
 
     @RabbitListener(queues = {ApplicationLocation.MQ_QUEUE_MEASUREMENTS})
     public void recieveSensorMessage(Message message) {
@@ -37,12 +42,17 @@ public class RealtimeCommunicationService implements CommunicationService {
 
         SensorRead sensorRead = SensorRead.builder()
                 .sensorType(sensorReadRequest.getSensorType())
-                .date(new Date())
+                .created(new Date())
                 .location(sensorReadRequest.getLocation())
                 .value(sensorReadRequest.getValue())
                 .build();
 
         sensorReadRepository.save(sensorRead);
+        loggingService.log("Sensor read["
+                + sensorReadRequest.getSensorType() + " ,"
+                + sensorReadRequest.getLocation() + ", "
+                + sensorReadRequest.getValue() + "] was saved."
+        );
     }
 
     @Override

@@ -14,11 +14,11 @@ public interface IrrigationRepository extends PagingAndSortingRepository<Irrigat
 
     @Query(value = "select i from Irrigation i " +
             "join fetch i.sensorReads s " +
-            "where month(i.date) = month(current_date()) and " +
+            "where (month(i.created) = month(current_date()) or month(i.updated) = month(current_date())) and " +
             "i.location = :location and " +
             "i.correction is not null")
     List<Irrigation> findByMonthAndLocation(@Param("location") Location location);
 
-    Irrigation findFirstByLocationOrderByDateDesc(Location location);
+    Irrigation findFirstByLocationOrderByCreatedDesc(Location location);
 
 }

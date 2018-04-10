@@ -10,6 +10,9 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import java.util.Date;
 
 @Entity
 @Data
@@ -21,6 +24,10 @@ public class Log {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column
     private long id;
+
+    @Column
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date created;
 
     @Column
     private String message;

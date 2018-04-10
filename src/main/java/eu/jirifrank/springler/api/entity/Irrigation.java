@@ -15,6 +15,9 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(name = "idx_location", columnList = "location")
+})
 public class Irrigation {
 
     @Id
@@ -22,7 +25,7 @@ public class Irrigation {
     @Column
     private long id;
 
-    @OneToMany(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY)
+    @ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY)
     private List<SensorRead> sensorReads;
 
     @Column
@@ -43,7 +46,7 @@ public class Irrigation {
 
     @Column
     @Temporal(TemporalType.TIMESTAMP)
-    private Date date;
+    private Date created;
 
     @Column
     @Temporal(TemporalType.TIMESTAMP)

@@ -4,7 +4,9 @@ import eu.jirifrank.springler.api.enums.ApplicationLocation;
 import eu.jirifrank.springler.service.notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
@@ -17,10 +19,7 @@ import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.annotation.PostConstruct;
-import javax.persistence.EntityManager;
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.concurrent.Executor;
 
 @EnableAsync
@@ -29,6 +28,7 @@ import java.util.concurrent.Executor;
 @EnableScheduling
 @EntityScan(basePackages = ApplicationLocation.ENTITIES)
 @SpringBootApplication(scanBasePackages = ApplicationLocation.BASE_PACKAGE)
+@EnableAutoConfiguration(exclude = RabbitAutoConfiguration.class)
 @EnableTransactionManagement
 public class Application {
 

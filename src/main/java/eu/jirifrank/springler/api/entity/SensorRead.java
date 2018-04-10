@@ -9,12 +9,16 @@ import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Table(indexes = {
+        @Index(name = "idx_type_location", columnList = "sensorType,location")
+})
 public class SensorRead {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -23,7 +27,7 @@ public class SensorRead {
 
     @Column
     @Temporal(TemporalType.TIMESTAMP)
-    private Date date;
+    private Date created;
 
     @Column
     @Enumerated(EnumType.STRING)
@@ -36,6 +40,6 @@ public class SensorRead {
     @Column
     private Double value;
 
-    @ManyToOne(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY, optional = true)
-    private Irrigation irrigation;
+    @ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY, mappedBy = "sensorReads")
+    private List<Irrigation> irrigationList;
 }
