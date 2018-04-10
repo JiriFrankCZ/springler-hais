@@ -7,7 +7,6 @@ import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.ApplicationLocation;
 import eu.jirifrank.springler.api.request.SensorReadRequest;
 import eu.jirifrank.springler.service.logging.LoggingService;
-import eu.jirifrank.springler.service.persistence.LogRepository;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import eu.jirifrank.springler.util.NumberUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +25,7 @@ public class RealtimeCommunicationService implements CommunicationService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    @Autowired(required = false)
+    @Autowired
     private RabbitTemplate rabbitTemplate;
 
     @Autowired

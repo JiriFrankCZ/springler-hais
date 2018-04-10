@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
@@ -28,7 +27,7 @@ import java.util.concurrent.Executor;
 @EnableScheduling
 @EntityScan(basePackages = ApplicationLocation.ENTITIES)
 @SpringBootApplication(scanBasePackages = ApplicationLocation.BASE_PACKAGE)
-@EnableAutoConfiguration(exclude = RabbitAutoConfiguration.class)
+@EnableAutoConfiguration
 @EnableTransactionManagement
 public class Application {
 
