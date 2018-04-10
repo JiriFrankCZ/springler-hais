@@ -3,6 +3,7 @@ package eu.jirifrank.springler.service.weather;
 import eu.jirifrank.springler.api.model.darksky.ForecastData;
 import eu.jirifrank.springler.api.model.darksky.ForecastResponse;
 import eu.jirifrank.springler.api.model.weather.WeatherForecast;
+import eu.jirifrank.springler.util.NumberUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -59,14 +60,15 @@ public class DarkSkyWeatherService implements WeatherService {
             ForecastData data = responseEntity.getBody().getDaily().getData().get(0);
 
             WeatherForecast weatherForecast = new WeatherForecast();
-            weatherForecast.setMaxTemperature(data.getTemperatureMax());
-            weatherForecast.setMinTemperature(data.getTemperatureMin());
+            weatherForecast.setMaxTemperature(NumberUtils.roundToHalf(data.getTemperatureMax()));
+            weatherForecast.setMinTemperature(NumberUtils.roundToHalf(data.getTemperatureMin()));
             weatherForecast.setSunrise(data.getSunriseTime());
             weatherForecast.setSunset(data.getSunsetTime());
-            weatherForecast.setHumidity(data.getHumidity());
-            weatherForecast.setWindSpeed(data.getWindSpeed());
+            weatherForecast.setHumidity(NumberUtils.roundToHalf(data.getHumidity()));
+            weatherForecast.setWindSpeed(NumberUtils.roundToHalf(data.getWindSpeed()));
             weatherForecast.setSummary(data.getSummary());
-            weatherForecast.setRainProbability((data.getPrecipType() != null && data.getPrecipType().equalsIgnoreCase(PRECIPE_TYPE_RAIN)) ? data.getPrecipProbability() : 0);
+            weatherForecast.setRainProbability((data.getPrecipType() != null && data.getPrecipType().equalsIgnoreCase(PRECIPE_TYPE_RAIN))
+                    ? NumberUtils.roundToHalf(data.getPrecipProbability()) : 0);
 
             log.debug("Weather forecast resolved {}.", weatherForecast);
 

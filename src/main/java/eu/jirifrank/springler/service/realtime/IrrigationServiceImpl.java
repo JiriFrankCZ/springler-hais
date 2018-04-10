@@ -7,6 +7,7 @@ import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.DeviceAction;
 import eu.jirifrank.springler.api.enums.Location;
 import eu.jirifrank.springler.api.enums.SensorType;
+import eu.jirifrank.springler.api.enums.ServiceType;
 import eu.jirifrank.springler.api.model.watering.ScoredIrrigation;
 import eu.jirifrank.springler.service.communication.CommunicationService;
 import eu.jirifrank.springler.service.logging.LoggingService;
@@ -78,21 +79,21 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         communicationService.sendActionMessage(new Action(DeviceAction.WATER, new WateringData(duration, location)));
 
-        loggingService.log("Watering on demand for " + location + "has been scheduled.");
+        loggingService.log("Watering on demand for " + location + "has been scheduled.", ServiceType.IRRIGATION);
     }
 
     @Scheduled(fixedDelay = 1 * 60 * 1000)
     public void reloadMeasurement() {
         log.debug("Reloading actual sensor readings per location.");
-        humidityList = sensorReadRepository.findLatestByType(SensorType.HUMIDITY);
-        temperatureList = sensorReadRepository.findLatestByType(SensorType.TEMPERATURE);
-        soilMoistureList = sensorReadRepository.findLatestByType(SensorType.SOIL_MOISTURE);
+        humidityList = sensorReadRepository.findLatestByType(SensorType.HUMIDITY, ServiceType.IRRIGATION);
+        temperatureList = sensorReadRepository.findLatestByType(SensorType.TEMPERATURE, ServiceType.IRRIGATION);
+        soilMoistureList = sensorReadRepository.findLatestByType(SensorType.SOIL_MOISTURE, ServiceType.IRRIGATION);
     }
 
     @Scheduled(fixedDelay = 15 * 60 * 1000)
     public void wateringCheck() {
         LOCATIONS.forEach(location -> {
-            if (!weatherService.isRainPredicted() || filterSensorReadByLocation(soilMoistureList, location).getValue() < (soilMoistureIdeal - soilMoistureThreshold)) {
+            if (!weatherService.isRainPredicted() && filterSensorReadByLocation(soilMoistureList, location).getValue() < (soilMoistureIdeal - soilMoistureThreshold)) {
                 Optional<ScoredIrrigation> similarIrrigation = findSimilarOrLast(location);
 
                 Irrigation irrigation;
@@ -128,11 +129,16 @@ public class IrrigationServiceImpl implements IrrigationService {
                 taskScheduler.schedule(() -> backpropagateResults(irrigation), Instant.now().plus(10l, MINUTES));
 
                 log.info("Scheduled watering {} and submitted for processing.", wateringData);
-                loggingService.log("Watering for " + location + " was scheduled with duration " + irrigation.getDuration() + "s.");
+                loggingService.log(
+                        "Watering for " + location + " was scheduled with duration " + irrigation.getDuration() + "s.",
+                        ServiceType.IRRIGATION
+                );
             } else {
                 log.info("Expected rain bypassed watering.");
-                loggingService.log("Watering for " + location + " needed, but expected rain ["
-                        + weatherService.getRainProbability() + "] bypassed watering."
+                loggingService.log(
+                        "Watering for " + location + " needed, but expected rain ["
+                                + weatherService.getRainProbability() + "] bypassed watering.",
+                        ServiceType.IRRIGATION
                 );
             }
         });
@@ -172,21 +178,22 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         log.info("Evaluation finished. Irrigation {} correction has been set to {}s.", irrigation, irrigation.getCorrection());
         loggingService.log("Learning by backpropagation of irrigation[" + irrigation.getId() + "] was updated by " +
-                irrigation.getCorrection() + "."
+                irrigation.getCorrection() + ".",
+                ServiceType.IRRIGATION
         );
     }
 
     private Optional<ScoredIrrigation> findSimilarOrLast(Location location) {
         List<Irrigation> irrigationList = irrigationRepository.findByMonthAndLocation(location);
 
-        Optional<ScoredIrrigation> choosenIrrigation = irrigationList.stream()
+        Optional<ScoredIrrigation> chosenIrrigation = irrigationList.stream()
                 .map(irrigation -> new ScoredIrrigation(irrigation, calculateScore(irrigation)))
                 .filter(irrigation -> irrigation.getScore() < 30)
                 .sorted(Comparator.comparing(ScoredIrrigation::getScore).reversed())
                 .findFirst();
 
-        if (choosenIrrigation.isPresent()) {
-            return choosenIrrigation;
+        if (chosenIrrigation.isPresent()) {
+            return chosenIrrigation;
         } else {
             Irrigation irrigation = irrigationRepository.findFirstByLocationOrderByCreatedDesc(location);
             if (irrigation == null) {

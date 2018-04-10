@@ -2,6 +2,7 @@ package eu.jirifrank.springler.service.persistence;
 
 import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.SensorType;
+import eu.jirifrank.springler.api.enums.ServiceType;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +17,8 @@ public interface SensorReadRepository extends PagingAndSortingRepository<SensorR
             "where s.id IN (" +
             "select max(sm.id) from SensorRead sm " +
             "group by sm.location, sm.sensorType " +
-            "having sm.sensorType = :sensorType" +
+            "having sm.sensorType = :sensorType and " +
+            "sm.serviceType = :serviceType" +
             ") ")
-    List<SensorRead> findLatestByType(@Param("sensorType") SensorType sensorType);
+    List<SensorRead> findLatestByType(@Param("sensorType") SensorType sensorType, @Param("serviceType") ServiceType serviceType);
 }

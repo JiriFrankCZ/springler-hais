@@ -9,6 +9,7 @@ import eu.jirifrank.springler.api.request.SensorReadRequest;
 import eu.jirifrank.springler.service.logging.LoggingService;
 import eu.jirifrank.springler.service.persistence.LogRepository;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
+import eu.jirifrank.springler.util.NumberUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -41,17 +42,19 @@ public class RealtimeCommunicationService implements CommunicationService {
         SensorReadRequest sensorReadRequest = deserializeFromByteArray(message.getBody(), SensorReadRequest.class);
 
         SensorRead sensorRead = SensorRead.builder()
+                .serviceType(sensorReadRequest.getServiceType())
                 .sensorType(sensorReadRequest.getSensorType())
                 .created(new Date())
                 .location(sensorReadRequest.getLocation())
-                .value(sensorReadRequest.getValue())
+                .value(NumberUtils.roundToHalf(sensorReadRequest.getValue()))
                 .build();
 
         sensorReadRepository.save(sensorRead);
         loggingService.log("Sensor read["
                 + sensorReadRequest.getSensorType() + " ,"
                 + sensorReadRequest.getLocation() + ", "
-                + sensorReadRequest.getValue() + "] was saved."
+                + sensorReadRequest.getValue() + "] was saved.",
+                sensorReadRequest.getServiceType()
         );
     }
 

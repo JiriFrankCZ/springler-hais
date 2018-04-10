@@ -2,6 +2,7 @@ package eu.jirifrank.springler.api.entity;
 
 import eu.jirifrank.springler.api.enums.Location;
 import eu.jirifrank.springler.api.enums.SensorType;
+import eu.jirifrank.springler.api.enums.ServiceType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +18,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(indexes = {
-        @Index(name = "idx_type_location", columnList = "sensorType,location")
+        @Index(name = "idx_type_location_service", columnList = "sensorType,serviceType,location")
 })
 public class SensorRead {
     @Id
@@ -26,12 +27,16 @@ public class SensorRead {
     private long id;
 
     @Column
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date created;
+    @Enumerated(EnumType.STRING)
+    private ServiceType serviceType;
 
     @Column
     @Enumerated(EnumType.STRING)
     private SensorType sensorType;
+
+    @Column
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date created;
 
     @Column
     @Enumerated(EnumType.STRING)
