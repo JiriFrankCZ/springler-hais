@@ -40,6 +40,11 @@ public class RealtimeCommunicationService implements CommunicationService {
 
         SensorReadRequest sensorReadRequest = deserializeFromByteArray(message.getBody(), SensorReadRequest.class);
 
+        if (sensorReadRequest == null) {
+            log.warn("Message thrown away.", message);
+            return;
+        }
+
         SensorRead sensorRead = SensorRead.builder()
                 .serviceType(sensorReadRequest.getServiceType())
                 .sensorType(sensorReadRequest.getSensorType())
