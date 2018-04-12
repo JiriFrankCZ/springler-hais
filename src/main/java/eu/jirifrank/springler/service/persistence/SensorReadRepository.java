@@ -16,7 +16,7 @@ public interface SensorReadRepository extends PagingAndSortingRepository<SensorR
     @Query(value = "select s from SensorRead s " +
             "where s.id IN (" +
             "select max(sm.id) from SensorRead sm " +
-            "group by sm.location, sm.sensorType " +
+            "group by sm.location, sm.sensorType, sm.serviceType " +
             "having sm.sensorType = :sensorType and " +
             "sm.serviceType = :serviceType" +
             ") ")
