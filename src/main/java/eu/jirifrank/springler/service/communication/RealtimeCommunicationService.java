@@ -16,6 +16,9 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.validation.Validation;
+import javax.validation.Validator;
+import javax.validation.ValidatorFactory;
 import java.io.IOException;
 import java.util.Date;
 
@@ -24,6 +27,13 @@ import java.util.Date;
 public class RealtimeCommunicationService implements CommunicationService {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
+    private static final Validator validator;
+
+    static {
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
+    }
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
@@ -40,7 +50,7 @@ public class RealtimeCommunicationService implements CommunicationService {
 
         SensorReadRequest sensorReadRequest = deserializeFromByteArray(message.getBody(), SensorReadRequest.class);
 
-        if (sensorReadRequest == null) {
+        if (sensorReadRequest == null || !validator.validate(sensorReadRequest).isEmpty()) {
             log.warn("Message thrown away.", message);
             return;
         }

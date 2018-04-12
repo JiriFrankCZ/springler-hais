@@ -8,13 +8,23 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotNull;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class SensorReadRequest {
+
+    @NotNull
     private ServiceType serviceType;
+
+    @NotNull
     private SensorType sensorType;
+
+    @NotNull
     private Double value;
+
+    @NotNull
     private Location location;
 }
