@@ -93,7 +93,8 @@ public class IrrigationServiceImpl implements IrrigationService {
     @Scheduled(fixedDelay = 15 * 60 * 1000)
     public void wateringCheck() {
         LOCATIONS.forEach(location -> {
-            if (!weatherService.isRainPredicted() && filterSensorReadByLocation(soilMoistureList, location).getValue() < (soilMoistureIdeal - soilMoistureThreshold)) {
+            Optional<SensorRead> soilMoistureSensorReadOpt = filterSensorReadByLocation(soilMoistureList, location);
+            if (!weatherService.isRainPredicted() && soilMoistureSensorReadOpt.isPresent() && soilMoistureSensorReadOpt.get().getValue() < (soilMoistureIdeal - soilMoistureThreshold)) {
                 Optional<ScoredIrrigation> similarIrrigation = findSimilarOrLast(location);
 
                 Irrigation irrigation;
@@ -146,9 +147,9 @@ public class IrrigationServiceImpl implements IrrigationService {
 
     private List<SensorRead> getSensorReads(Location location) {
         return Arrays.asList(
-                filterSensorReadByLocation(humidityList, location),
-                filterSensorReadByLocation(soilMoistureList, location),
-                filterSensorReadByLocation(temperatureList, location)
+                filterSensorReadByLocation(humidityList, location).get(),
+                filterSensorReadByLocation(soilMoistureList, location).get(),
+                filterSensorReadByLocation(temperatureList, location).get()
         );
     }
 
@@ -160,7 +161,7 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         double correctionCoefficient = 0.0;
 
-        double soilMositureValue = filterSensorReadByLocation(soilMoistureList, irrigation.getLocation()).getValue();
+        double soilMositureValue = filterSensorReadByLocation(soilMoistureList, irrigation.getLocation()).get().getValue();
         if (soilMositureValue > topBoundary) {
             correctionCoefficient = topBoundary / soilMositureValue;
         } else if (soilMositureValue < bottomBoundary) {
@@ -212,7 +213,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                 .filter(sensorRead -> sensorRead.getSensorType().equals(SensorType.SOIL_MOISTURE))
                 .findFirst()
                 .ifPresent(sensorRead -> {
-                    SensorRead sensorReadActual = filterSensorReadByLocation(soilMoistureList, sensorRead.getLocation());
+                    SensorRead sensorReadActual = filterSensorReadByLocation(soilMoistureList, sensorRead.getLocation()).get();
                     score[0] += SOIL_MOISTURE_WEIGHT * Math.abs(sensorRead.getValue() - sensorReadActual.getValue());
                 });
 
@@ -220,7 +221,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                 .filter(sensorRead -> sensorRead.getSensorType().equals(SensorType.TEMPERATURE))
                 .findFirst()
                 .ifPresent(sensorRead -> {
-                    SensorRead sensorReadActual = filterSensorReadByLocation(temperatureList, sensorRead.getLocation());
+                    SensorRead sensorReadActual = filterSensorReadByLocation(temperatureList, sensorRead.getLocation()).get();
                     score[0] += TEMPERATURE_WEIGHT * Math.abs(sensorRead.getValue() - sensorReadActual.getValue());
                 });
 
@@ -228,7 +229,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                 .filter(sensorRead -> sensorRead.getSensorType().equals(SensorType.HUMIDITY))
                 .findFirst()
                 .ifPresent(sensorRead -> {
-                    SensorRead sensorReadActual = filterSensorReadByLocation(humidityList, sensorRead.getLocation());
+                    SensorRead sensorReadActual = filterSensorReadByLocation(humidityList, sensorRead.getLocation()).get();
                     score[0] += HUMIDITY_WEIGHT * Math.abs(sensorRead.getValue() - sensorReadActual.getValue());
                 });
 
@@ -242,14 +243,13 @@ public class IrrigationServiceImpl implements IrrigationService {
         return score[0];
     }
 
-    private SensorRead filterSensorReadByLocation(List<SensorRead> sensorReadList, Location location) {
+    private Optional<SensorRead> filterSensorReadByLocation(List<SensorRead> sensorReadList, Location location) {
         if (sensorReadList.isEmpty()) {
-            return null;
+            return Optional.empty();
         }
 
         return sensorReadList.stream()
-                .filter(sensorRead -> sensorRead.getLocation().equals(location))
-                .findFirst()
-                .get();
+                .filter(sensorRead -> sensorRead.getLocation().equals(location) || sensorRead.getLocation().equals(Location.ALL))
+                .findFirst();
     }
 }
