@@ -34,7 +34,7 @@ public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
         log.info("Weather forecast is up to created.");
     }
 
-    @Scheduled(fixedDelay = 5 * 60 * 1000)
+    @Scheduled(fixedDelay = 30 * 60 * 1000)
     public void periodicUpdate() {
         log.info("Periodic weather forecast update started.");
         weatherForecast = weatherService.getForecast();
