@@ -58,8 +58,12 @@ public class LedLightService implements LightService {
             log.info("Automatic lightning enabled, scheduling start/stop sequences.");
             LocalDateTime sunset = realtimeWeatherService.getSunset();
 
-            Date startTime = TimeUtils.fromDateTimeToDate(sunset);
-            taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
+            if (sunset.plusHours(automaticLightningDuration).isAfter(LocalDateTime.now())) {
+                scheduleStartLightAndExecute();
+            } else {
+                Date startTime = TimeUtils.fromDateTimeToDate(sunset);
+                taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
+            }
 
             Date stopTime = TimeUtils.fromDateTimeToDate(sunset.plusHours(automaticLightningDuration));
             taskScheduler.schedule(this::scheduleStopLightAndExecute, stopTime);
