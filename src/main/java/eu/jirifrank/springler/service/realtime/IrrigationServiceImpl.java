@@ -134,11 +134,16 @@ public class IrrigationServiceImpl implements IrrigationService {
                         "Watering for " + location + " was scheduled with duration " + irrigation.getDuration() + "s.",
                         ServiceType.IRRIGATION
                 );
-            } else {
+            } else if (weatherService.isRainPredicted()) {
                 log.info("Expected rain bypassed watering.");
                 loggingService.log(
                         "Watering for " + location + " needed, but expected rain ["
                                 + weatherService.getRainProbability() + "] bypassed watering.",
+                        ServiceType.IRRIGATION
+                );
+            } else {
+                log.info("Soil moisture in location {} is high enough, watering not needed.", location);
+                loggingService.log("Soil moisture in location " + location + " is high enough, watering not needed.",
                         ServiceType.IRRIGATION
                 );
             }
