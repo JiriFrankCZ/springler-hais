@@ -80,7 +80,7 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         communicationService.sendActionMessage(new Action(DeviceAction.WATER, new WateringData(duration, location)));
 
-        loggingService.log("Watering on demand for " + location + "has been scheduled.", ServiceType.IRRIGATION);
+        loggingService.log("Watering on demand for " + location + " has been scheduled.", ServiceType.IRRIGATION);
     }
 
     @Scheduled(fixedDelay = 1 * 60 * 1000)
