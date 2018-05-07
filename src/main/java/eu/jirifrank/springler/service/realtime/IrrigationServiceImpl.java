@@ -36,9 +36,10 @@ public class IrrigationServiceImpl implements IrrigationService {
     );
     private static final double SOIL_MOISTURE_WEIGHT = 0.3;
     private static final double TEMPERATURE_WEIGHT = 0.1;
-    private static final double HUMIDITY_WEIGHT = 0.1;
+    private static final double HUMIDITY_WEIGHT = 0.05;
     private static final double RAIN_PROBABILITY_WEIGHT = 0.3;
     private static final double TEMPERATURE_FORECAST_WEIGHT = 0.2;
+    private static final double DURATION_WEIGHT = 0.05;
 
     @Value("${watering.soil.moisture.ideal}")
     private Double soilMoistureIdeal;
@@ -99,27 +100,48 @@ public class IrrigationServiceImpl implements IrrigationService {
 
                 Irrigation irrigation;
 
+                List<SensorRead> sensorReadList = getSensorReads(location);
                 if (similarIrrigation.isPresent() && similarIrrigation.get().getScore() != null) {
                     log.debug("Perfect match for irrigation.");
                     irrigation = similarIrrigation.get().getIrrigation();
                     irrigation.setUpdated(new Date());
                     irrigation.setDuration(irrigation.getDuration() + irrigation.getCorrection());
-                 } else {
-                    log.debug("Not similar irrigation found. Starting for given combination from scratch.");
+                    irrigation.setCorrection(null);
+                    irrigation.setIteration(irrigation.getIteration() + 1);
+                 } else if(similarIrrigation.isPresent()){
+                    log.debug("No similar irrigation found for given combination, starting with best available irrigation.");
                     irrigation = Irrigation.builder()
                             .created(new Date())
                             .location(location)
-                            .sensorReads(getSensorReads(location))
+                            .iteration(1)
+                            .sensorReads(sensorReadList)
                             .temperatureForecast(weatherService.getForecastedTemperature())
                             .rainProbability(weatherService.getRainProbability())
-                            .duration(1.0)
                             .build();
 
                     similarIrrigation.ifPresent(scoredIrrigationPast -> {
                         Irrigation irrigationPast = scoredIrrigationPast.getIrrigation();
                         irrigation.setDuration(irrigationPast.getDuration() + irrigationPast.getCorrection());
                     });
+                } else {
+                    log.debug("Not similar irrigation found. Starting for given combination from scratch.");
+                    irrigation = Irrigation.builder()
+                            .created(new Date())
+                            .location(location)
+                            .iteration(1)
+                            .sensorReads(sensorReadList)
+                            .temperatureForecast(weatherService.getForecastedTemperature())
+                            .rainProbability(weatherService.getRainProbability())
+                            .duration(5.0)
+                            .build();
                 }
+
+                // bi-directional mapping added if needed
+                sensorReadList.forEach(sensorRead -> {
+                    if(!sensorRead.getIrrigationList().contains(irrigation)){
+                        sensorRead.getIrrigationList().add(irrigation);
+                    }
+                });
 
                 irrigationRepository.save(irrigation);
 
@@ -166,15 +188,15 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         double correctionCoefficient = 0.0;
 
-        double soilMositureValue = filterSensorReadByLocation(soilMoistureList, irrigation.getLocation()).get().getValue();
-        if (soilMositureValue > topBoundary) {
-            correctionCoefficient = topBoundary / soilMositureValue;
-        } else if (soilMositureValue < bottomBoundary) {
-            correctionCoefficient = bottomBoundary / soilMositureValue;
-        } else if (soilMositureValue < topBoundary && soilMositureValue > soilMoistureIdeal) {
-            correctionCoefficient = soilMoistureIdeal / soilMositureValue;
-        } else if (soilMositureValue > bottomBoundary && soilMositureValue < soilMoistureIdeal) {
-            correctionCoefficient = soilMoistureIdeal / soilMositureValue;
+        double soilMoistureValue = filterSensorReadByLocation(soilMoistureList, irrigation.getLocation()).get().getValue();
+        if (soilMoistureValue > topBoundary) {
+            correctionCoefficient = topBoundary / soilMoistureValue;
+        } else if (soilMoistureValue < bottomBoundary) {
+            correctionCoefficient = bottomBoundary / soilMoistureValue;
+        } else if (soilMoistureValue < topBoundary && soilMoistureValue > soilMoistureIdeal) {
+            correctionCoefficient = soilMoistureIdeal / soilMoistureValue;
+        } else if (soilMoistureValue > bottomBoundary && soilMoistureValue < soilMoistureIdeal) {
+            correctionCoefficient = soilMoistureIdeal / soilMoistureValue;
         }
 
         double correction = (irrigation.getDuration() * correctionCoefficient) - irrigation.getDuration();
@@ -242,6 +264,8 @@ public class IrrigationServiceImpl implements IrrigationService {
         score[0] += RAIN_PROBABILITY_WEIGHT * Math.abs(irrigation.getRainProbability() - weatherService.getRainProbability());
 
         score[0] += TEMPERATURE_FORECAST_WEIGHT * Math.abs(irrigation.getTemperatureForecast() - weatherService.getForecastedTemperature());
+
+        score[0] += DURATION_WEIGHT * irrigation.getDuration();
 
         log.debug("Irrigation {} has score: {}.", irrigation.toString(), score[0]);
 
