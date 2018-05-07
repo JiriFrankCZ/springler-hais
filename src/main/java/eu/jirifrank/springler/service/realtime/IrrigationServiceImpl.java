@@ -100,6 +100,7 @@ public class IrrigationServiceImpl implements IrrigationService {
 
                 Irrigation irrigation;
 
+                List<SensorRead> sensorReadList = getSensorReads(location);
                 if (similarIrrigation.isPresent() && similarIrrigation.get().getScore() != null) {
                     log.debug("Perfect match for irrigation.");
                     irrigation = similarIrrigation.get().getIrrigation();
@@ -113,7 +114,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                             .created(new Date())
                             .location(location)
                             .iteration(1)
-                            .sensorReads(getSensorReads(location))
+                            .sensorReads(sensorReadList)
                             .temperatureForecast(weatherService.getForecastedTemperature())
                             .rainProbability(weatherService.getRainProbability())
                             .build();
@@ -128,12 +129,19 @@ public class IrrigationServiceImpl implements IrrigationService {
                             .created(new Date())
                             .location(location)
                             .iteration(1)
-                            .sensorReads(getSensorReads(location))
+                            .sensorReads(sensorReadList)
                             .temperatureForecast(weatherService.getForecastedTemperature())
                             .rainProbability(weatherService.getRainProbability())
                             .duration(5.0)
                             .build();
                 }
+
+                // bi-directional mapping added if needed
+                sensorReadList.forEach(sensorRead -> {
+                    if(!sensorRead.getIrrigationList().contains(irrigation)){
+                        sensorRead.getIrrigationList().add(irrigation);
+                    }
+                });
 
                 irrigationRepository.save(irrigation);
 

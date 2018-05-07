@@ -25,7 +25,7 @@ public class Irrigation {
     @Column
     private long id;
 
-    @ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY)
+    @ManyToMany(cascade = {CascadeType.REFRESH, CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
     private List<SensorRead> sensorReads;
 
     @Column
