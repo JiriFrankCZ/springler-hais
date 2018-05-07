@@ -42,6 +42,9 @@ public class Irrigation {
     private Double duration;
 
     @Column
+    private Integer iteration;
+
+    @Column
     private Double correction;
 
     @Column
