@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -46,5 +47,5 @@ public class SensorRead {
     private Double value;
 
     @ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY, mappedBy = "sensorReads")
-    private List<Irrigation> irrigationList;
+    private List<Irrigation> irrigationList = new ArrayList<>();
 }
