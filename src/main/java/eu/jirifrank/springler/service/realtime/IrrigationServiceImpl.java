@@ -24,6 +24,8 @@ import org.yaml.snakeyaml.util.ArrayUtils;
 
 import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.time.temporal.ChronoUnit.MINUTES;
 
@@ -187,11 +189,11 @@ public class IrrigationServiceImpl implements IrrigationService {
     }
 
     private List<SensorRead> getSensorReads(Location location) {
-        return Arrays.asList(
-                filterSensorReadByLocation(humidityList, Location.ALL).get(),
+        return Stream.of(
+                filterSensorReadByLocation(humidityList, location).get(),
                 filterSensorReadByLocation(soilMoistureList, location).get(),
-                filterSensorReadByLocation(temperatureList, Location.ALL).get()
-        );
+                filterSensorReadByLocation(temperatureList, location).get()
+        ).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Transactional
