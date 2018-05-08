@@ -101,7 +101,7 @@ public class IrrigationServiceImpl implements IrrigationService {
             if (!weatherService.isRainPredicted() && soilMoistureSensorReadOpt.isPresent() && soilMoistureSensorReadOpt.get().getValue() < (soilMoistureIdeal - soilMoistureThreshold)) {
                 Optional<ScoredIrrigation> similarIrrigation = findSimilarOrLast(location);
 
-                Irrigation irrigation;
+                final Irrigation irrigation;
                 boolean updateSensorReadRelations = false;
 
                 List<SensorRead> sensorReadList = getSensorReads(location);
