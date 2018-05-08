@@ -177,9 +177,9 @@ public class IrrigationServiceImpl implements IrrigationService {
 
     private List<SensorRead> getSensorReads(Location location) {
         return Arrays.asList(
-                filterSensorReadByLocation(humidityList, location).get(),
+                filterSensorReadByLocation(humidityList, Location.ALL).get(),
                 filterSensorReadByLocation(soilMoistureList, location).get(),
-                filterSensorReadByLocation(temperatureList, location).get()
+                filterSensorReadByLocation(temperatureList, Location.ALL).get()
         );
     }
 
