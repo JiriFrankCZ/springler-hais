@@ -46,6 +46,6 @@ public class SensorRead {
     @Column
     private Double value;
 
-    @ManyToMany(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY, mappedBy = "sensorReads")
+    @ManyToMany(cascade = {CascadeType.REFRESH, CascadeType.MERGE}, fetch = FetchType.LAZY, mappedBy = "sensorReads")
     private List<Irrigation> irrigationList = new ArrayList<>();
 }
