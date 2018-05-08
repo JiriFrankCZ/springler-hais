@@ -14,6 +14,7 @@ import java.util.List;
 public interface SensorReadRepository extends PagingAndSortingRepository<SensorRead, Long> {
 
     @Query(value = "select s from SensorRead s " +
+            "left join fetch s.irrigationList i " +
             "where s.id IN (" +
             "select max(sm.id) from SensorRead sm " +
             "group by sm.location, sm.sensorType, sm.serviceType " +

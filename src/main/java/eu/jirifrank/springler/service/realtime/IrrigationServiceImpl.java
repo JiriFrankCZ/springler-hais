@@ -51,11 +51,11 @@ public class IrrigationServiceImpl implements IrrigationService {
     @Value("${watering.duration.default}")
     private Double defaultWateringDuration;
 
-    private List<SensorRead> humidityList;
+    private List<SensorRead> humidityList = new ArrayList<>();
 
-    private List<SensorRead> soilMoistureList;
+    private List<SensorRead> soilMoistureList = new ArrayList<>();
 
-    private List<SensorRead> temperatureList;
+    private List<SensorRead> temperatureList = new ArrayList<>();
 
     @Autowired
     private IrrigationRepository irrigationRepository;
