@@ -126,7 +126,10 @@ public class IrrigationServiceImpl implements IrrigationService {
 
                     similarIrrigation.ifPresent(scoredIrrigationPast -> {
                         Irrigation irrigationPast = scoredIrrigationPast.getIrrigation();
-                        irrigation.setDuration(irrigationPast.getDuration() + irrigationPast.getCorrection());
+                        irrigation.setDuration(irrigationPast.getDuration());
+                        if (irrigationPast.getCorrection() != null) {
+                            irrigation.setDuration(irrigation.getDuration() + irrigationPast.getCorrection());
+                        }
                     });
                 } else {
                     log.debug("Not similar irrigation found. Starting for given combination from scratch.");
@@ -204,7 +207,7 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         irrigationRepository.save(irrigation);
 
-        log.info("Evaluation finished. Irrigation {} correction has been set to {}s.", irrigation, irrigation.getCorrection());
+        log.info("Evaluation finished. Irrigation {} correction has been set to {}s.", irrigation.getId(), irrigation.getCorrection());
         loggingService.log("Learning by backpropagation of irrigation[" + irrigation.getId() + "] was updated by " +
                         irrigation.getCorrection() + ".",
                 ServiceType.IRRIGATION
@@ -267,7 +270,7 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         score[0] += DURATION_WEIGHT * irrigation.getDuration();
 
-        log.debug("Irrigation {} has score: {}.", irrigation.toString(), score[0]);
+        log.debug("Irrigation {} has score: {}.", irrigation.getId(), score[0]);
 
         return score[0];
     }

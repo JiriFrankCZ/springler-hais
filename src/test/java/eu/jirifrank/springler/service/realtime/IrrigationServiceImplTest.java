@@ -5,6 +5,7 @@ import eu.jirifrank.springler.api.entity.Irrigation;
 import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.Location;
 import eu.jirifrank.springler.api.enums.SensorType;
+import eu.jirifrank.springler.api.enums.ServiceType;
 import eu.jirifrank.springler.service.persistence.IrrigationRepository;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import org.junit.Test;
@@ -13,13 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.Arrays;
 import java.util.Date;
 
-/**
- * Popis tridy
- *
- * @author Jmeno Prijmeni (JPR)
- * @version 1.0
- * @since 23.3.2018
- */
 public class IrrigationServiceImplTest extends AbstractIntegrationTest {
 
     @Autowired
@@ -34,9 +28,10 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
     @Test
     public void doWatering() {
         SensorRead sensorRead = SensorRead.builder()
-                .sensorType(SensorType.HUMIDITY)
-                .date(new Date())
+                .sensorType(SensorType.SOIL_MOISTURE)
+                .created(new Date())
                 .location(Location.COVERED)
+                .serviceType(ServiceType.IRRIGATION)
                 .value(10.0)
                 .build();
 
@@ -46,16 +41,20 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
                 .builder()
                 .duration(10.0)
                 .location(Location.COVERED)
-                .date(new Date())
+                .created(new Date())
+                .rainProbability(40.0)
+                .temperatureForecast(20.0)
                 .sensorReads(Arrays.asList(sensorRead))
+                .iteration(1)
                 .build();
 
         irrigationRepository.save(irrigation);
 
         sensorRead = SensorRead.builder()
                 .sensorType(SensorType.HUMIDITY)
-                .date(new Date())
+                .created(new Date())
                 .location(Location.COVERED)
+                .serviceType(ServiceType.IRRIGATION)
                 .value(20.0)
                 .build();
 
@@ -66,7 +65,10 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
                 .duration(15.0)
                 .location(Location.COVERED)
                 .correction(-1.0)
-                .date(new Date())
+                .created(new Date())
+                .rainProbability(40.0)
+                .temperatureForecast(20.0)
+                .iteration(1)
                 .sensorReads(Arrays.asList(sensorRead))
                 .build();
 
@@ -74,9 +76,10 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
 
 
         sensorRead = SensorRead.builder()
-                .sensorType(SensorType.HUMIDITY)
-                .date(new Date())
+                .sensorType(SensorType.SOIL_MOISTURE)
+                .created(new Date())
                 .location(Location.COVERED)
+                .serviceType(ServiceType.IRRIGATION)
                 .value(10.0)
                 .build();
 
@@ -84,8 +87,9 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
 
         sensorRead = SensorRead.builder()
                 .sensorType(SensorType.SOIL_MOISTURE)
-                .date(new Date())
+                .created(new Date())
                 .location(Location.COVERED)
+                .serviceType(ServiceType.IRRIGATION)
                 .value(10.0)
                 .build();
 
@@ -93,8 +97,9 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
 
         sensorRead = SensorRead.builder()
                 .sensorType(SensorType.TEMPERATURE)
-                .date(new Date())
+                .created(new Date())
                 .location(Location.COVERED)
+                .serviceType(ServiceType.IRRIGATION)
                 .value(10.0)
                 .build();
 
@@ -103,27 +108,30 @@ public class IrrigationServiceImplTest extends AbstractIntegrationTest {
 
         sensorRead = SensorRead.builder()
                 .sensorType(SensorType.HUMIDITY)
-                .date(new Date())
+                .created(new Date())
                 .location(Location.OPENED)
-                .value(10.0)
+                .serviceType(ServiceType.IRRIGATION)
+                .value(1.0)
                 .build();
 
         sensorReadRepository.save(sensorRead);
 
         sensorRead = SensorRead.builder()
                 .sensorType(SensorType.SOIL_MOISTURE)
-                .date(new Date())
+                .created(new Date())
                 .location(Location.OPENED)
-                .value(10.0)
+                .serviceType(ServiceType.IRRIGATION)
+                .value(1.0)
                 .build();
 
         sensorReadRepository.save(sensorRead);
 
         sensorRead = SensorRead.builder()
                 .sensorType(SensorType.TEMPERATURE)
-                .date(new Date())
+                .created(new Date())
                 .location(Location.OPENED)
-                .value(10.0)
+                .serviceType(ServiceType.IRRIGATION)
+                .value(1.0)
                 .build();
 
         sensorReadRepository.save(sensorRead);

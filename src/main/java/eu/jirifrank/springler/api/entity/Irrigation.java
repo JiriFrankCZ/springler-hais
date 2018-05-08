@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -27,7 +26,7 @@ public class Irrigation {
     private long id;
 
     @ManyToMany(cascade = {CascadeType.REFRESH, CascadeType.MERGE}, fetch = FetchType.LAZY)
-    private List<SensorRead> sensorReads = new ArrayList<>();
+    private List<SensorRead> sensorReads;
 
     @Column
     private Double rainProbability;
