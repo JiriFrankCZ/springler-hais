@@ -104,7 +104,6 @@ public class IrrigationServiceImpl implements IrrigationService {
                 Optional<ScoredIrrigation> similarIrrigation = findSimilarOrLast(location);
 
                 final Irrigation irrigation;
-                boolean updateSensorReadRelations = false;
 
                 List<SensorRead> sensorReadList = getSensorReads(location);
                 if (similarIrrigation.isPresent() && similarIrrigation.get().getScore() != null) {
@@ -120,6 +119,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                             .created(new Date())
                             .location(location)
                             .iteration(1)
+                            .sensorReads(sensorReadList)
                             .temperatureForecast(weatherService.getForecastedTemperature())
                             .rainProbability(weatherService.getRainProbability())
                             .build();
@@ -128,38 +128,21 @@ public class IrrigationServiceImpl implements IrrigationService {
                         Irrigation irrigationPast = scoredIrrigationPast.getIrrigation();
                         irrigation.setDuration(irrigationPast.getDuration() + irrigationPast.getCorrection());
                     });
-
-                    updateSensorReadRelations = true;
                 } else {
                     log.debug("Not similar irrigation found. Starting for given combination from scratch.");
                     irrigation = Irrigation.builder()
                             .created(new Date())
                             .location(location)
                             .iteration(1)
+                            .sensorReads(sensorReadList)
                             .temperatureForecast(weatherService.getForecastedTemperature())
                             .rainProbability(weatherService.getRainProbability())
                             .duration(5.0)
                             .build();
 
-                    updateSensorReadRelations = true;
                 }
 
                 irrigationRepository.save(irrigation);
-
-                // bi-directional mapping added if needed
-                if (updateSensorReadRelations) {
-                    sensorReadList.forEach(sensorRead -> {
-                        if (!sensorRead.getIrrigationList().contains(irrigation)) {
-                            sensorRead.getIrrigationList().add(irrigation);
-                        }
-                    });
-
-                    irrigation.setSensorReads(sensorReadList);
-
-                    irrigationRepository.save(irrigation);
-                    sensorReadRepository.saveAll(sensorReadList);
-                }
-
 
                 WateringData wateringData = new WateringData(irrigation.getDuration(), irrigation.getLocation());
                 Action action = new Action(DeviceAction.WATER, wateringData);
