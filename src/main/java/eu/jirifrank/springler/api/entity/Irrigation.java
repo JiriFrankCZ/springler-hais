@@ -26,6 +26,10 @@ public class Irrigation {
     private long id;
 
     @ManyToMany(cascade = {CascadeType.REFRESH, CascadeType.MERGE}, fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "irrigation_sensor_reads",
+            joinColumns = @JoinColumn(name = "irrigation_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "sensor_read_id", referencedColumnName = "id"))
     private List<SensorRead> sensorReads;
 
     @Column
