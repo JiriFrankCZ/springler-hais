@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.yaml.snakeyaml.util.ArrayUtils;
 
 import java.time.Instant;
@@ -83,7 +84,8 @@ public class IrrigationServiceImpl implements IrrigationService {
         loggingService.log("Watering on demand for " + location + " has been scheduled.", ServiceType.IRRIGATION);
     }
 
-    @Scheduled(fixedDelay = 1 * 60 * 1000)
+    @Scheduled(fixedDelay = 4 * 60 * 1000)
+    @Transactional(readOnly = true)
     public void reloadMeasurement() {
         log.debug("Reloading actual sensor readings per location.");
         humidityList = sensorReadRepository.findLatestByType(SensorType.HUMIDITY, ServiceType.IRRIGATION);
@@ -92,6 +94,7 @@ public class IrrigationServiceImpl implements IrrigationService {
     }
 
     @Scheduled(fixedDelay = 15 * 60 * 1000)
+    @Transactional
     public void wateringCheck() {
         LOCATIONS.forEach(location -> {
             Optional<SensorRead> soilMoistureSensorReadOpt = filterSensorReadByLocation(soilMoistureList, location);
@@ -149,7 +152,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                 Action action = new Action(DeviceAction.WATER, wateringData);
                 communicationService.sendActionMessage(action);
 
-                taskScheduler.schedule(() -> backpropagateResults(irrigation), Instant.now().plus(10l, MINUTES));
+                taskScheduler.schedule(() -> this.backpropagateResults(irrigation), Instant.now().plus(10l, MINUTES));
 
                 log.info("Scheduled watering {} and submitted for processing.", wateringData);
                 loggingService.log(
@@ -180,6 +183,7 @@ public class IrrigationServiceImpl implements IrrigationService {
         );
     }
 
+    @Transactional
     private void backpropagateResults(Irrigation irrigation) {
         log.info("Evaluating efficiency of irrigation {}.", irrigation);
 
@@ -206,7 +210,7 @@ public class IrrigationServiceImpl implements IrrigationService {
 
         log.info("Evaluation finished. Irrigation {} correction has been set to {}s.", irrigation, irrigation.getCorrection());
         loggingService.log("Learning by backpropagation of irrigation[" + irrigation.getId() + "] was updated by " +
-                irrigation.getCorrection() + ".",
+                        irrigation.getCorrection() + ".",
                 ServiceType.IRRIGATION
         );
     }
