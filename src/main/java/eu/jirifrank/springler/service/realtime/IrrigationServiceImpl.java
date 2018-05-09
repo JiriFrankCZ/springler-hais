@@ -13,6 +13,7 @@ import eu.jirifrank.springler.service.communication.CommunicationService;
 import eu.jirifrank.springler.service.logging.LoggingService;
 import eu.jirifrank.springler.service.persistence.IrrigationRepository;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
+import eu.jirifrank.springler.util.NumberUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -110,7 +111,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                     log.debug("Perfect match for irrigation.");
                     irrigation = similarIrrigation.get().getIrrigation();
                     irrigation.setUpdated(new Date());
-                    irrigation.setDuration(irrigation.getDuration() + irrigation.getCorrection());
+                    irrigation.setDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigation.getCorrection()));
                     irrigation.setCorrection(null);
                     irrigation.setIteration(irrigation.getIteration() + 1);
                  } else if(similarIrrigation.isPresent()){
@@ -128,7 +129,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                         Irrigation irrigationPast = scoredIrrigationPast.getIrrigation();
                         irrigation.setDuration(irrigationPast.getDuration());
                         if (irrigationPast.getCorrection() != null) {
-                            irrigation.setDuration(irrigation.getDuration() + irrigationPast.getCorrection());
+                            irrigation.setDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigationPast.getCorrection()));
                         }
                     });
                 } else {
@@ -202,7 +203,7 @@ public class IrrigationServiceImpl implements IrrigationService {
             correctionCoefficient = soilMoistureIdeal / soilMoistureValue;
         }
 
-        double correction = (irrigation.getDuration() * correctionCoefficient) - irrigation.getDuration();
+        double correction = NumberUtils.roundToHalf((irrigation.getDuration() * correctionCoefficient) - irrigation.getDuration());
         irrigation.setCorrection(correction);
 
         irrigationRepository.save(irrigation);
