@@ -96,7 +96,7 @@ public class IrrigationServiceImpl implements IrrigationService {
         soilMoistureList = sensorReadRepository.findLatestByType(SensorType.SOIL_MOISTURE, ServiceType.IRRIGATION);
     }
 
-    @Scheduled(fixedDelay = 15 * 60 * 1000)
+    @Scheduled(fixedDelay = 30 * 60 * 1000)
     @Transactional
     public void wateringCheck() {
         LOCATIONS.forEach(location -> {
@@ -152,7 +152,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                 Action action = new Action(DeviceAction.WATER, wateringData);
                 communicationService.sendActionMessage(action);
 
-                taskScheduler.schedule(() -> this.backpropagateResults(irrigation), Instant.now().plus(10l, MINUTES));
+                taskScheduler.schedule(() -> this.backpropagateResults(irrigation), Instant.now().plus(15l, MINUTES));
 
                 log.info("Scheduled watering {} and submitted for processing.", wateringData);
                 loggingService.log(
