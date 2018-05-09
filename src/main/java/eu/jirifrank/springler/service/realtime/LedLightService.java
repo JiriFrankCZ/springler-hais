@@ -53,12 +53,13 @@ public class LedLightService implements LightService {
     public void init() {
         log.info("Lightning service started.");
         stopLight();
+        startLight(100, 100, 100);
 
         if (automaticLightning) {
             log.info("Automatic lightning enabled, scheduling start/stop sequences.");
             LocalDateTime sunset = realtimeWeatherService.getSunset();
 
-            if (sunset.plusHours(automaticLightningDuration).isAfter(LocalDateTime.now()) && sunset.isBefore(LocalDateTime.now())) {
+            if (sunset.plusHours(automaticLightningDuration).isAfter(LocalDateTime.now()) || sunset.isBefore(LocalDateTime.now())) {
                 scheduleStartLightAndExecute();
             } else {
                 Date startTime = TimeUtils.fromDateTimeToDate(sunset);
