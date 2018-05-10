@@ -54,6 +54,9 @@ public class IrrigationServiceImpl implements IrrigationService {
     @Value("${watering.duration.default}")
     private Double defaultWateringDuration;
 
+    @Value("${watering.duration.max}")
+    private Double maxWateringDuration;
+
     private List<SensorRead> humidityList = new ArrayList<>();
 
     private List<SensorRead> soilMoistureList = new ArrayList<>();
@@ -111,7 +114,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                     log.debug("Perfect match for irrigation.");
                     irrigation = similarIrrigation.get().getIrrigation();
                     irrigation.setUpdated(new Date());
-                    irrigation.setDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigation.getCorrection()));
+                    irrigation.setDuration(getDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigation.getCorrection())));
                     irrigation.setCorrection(null);
                     irrigation.setIteration(irrigation.getIteration() + 1);
                  } else if(similarIrrigation.isPresent()){
@@ -127,9 +130,9 @@ public class IrrigationServiceImpl implements IrrigationService {
 
                     similarIrrigation.ifPresent(scoredIrrigationPast -> {
                         Irrigation irrigationPast = scoredIrrigationPast.getIrrigation();
-                        irrigation.setDuration(irrigationPast.getDuration());
+                        irrigation.setDuration(getDuration(irrigationPast.getDuration()));
                         if (irrigationPast.getCorrection() != null) {
-                            irrigation.setDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigationPast.getCorrection()));
+                            irrigation.setDuration(getDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigationPast.getCorrection())));
                         }
                     });
                 } else {
@@ -141,7 +144,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                             .sensorReads(sensorReadList)
                             .temperatureForecast(weatherService.getForecastedTemperature())
                             .rainProbability(weatherService.getRainProbability())
-                            .duration(5.0)
+                            .duration(getDuration(null))
                             .build();
 
                 }
@@ -173,6 +176,20 @@ public class IrrigationServiceImpl implements IrrigationService {
                 );
             }
         });
+    }
+
+    private double getDuration(Double duration) {
+        if (duration == null) {
+            return defaultWateringDuration;
+        }
+
+        if (duration > maxWateringDuration) {
+            log.warn("Attempt to water longer then max permitted duration.");
+            loggingService.log("Attempt to water longer[" + duration + "s] then max permitted duration..", ServiceType.IRRIGATION);
+            return maxWateringDuration;
+        }
+
+        return duration;
     }
 
     private List<SensorRead> getSensorReads(Location location) {

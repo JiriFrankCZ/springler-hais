@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.Calendar;
 import java.util.Date;
 
 @Service
@@ -56,7 +57,7 @@ public class LedLightService implements LightService {
 
         if (automaticLightning) {
             log.info("Automatic lightning enabled, scheduling start/stop sequences.");
-            LocalDateTime sunset = realtimeWeatherService.getSunset();
+            LocalDateTime sunset = realtimeWeatherService.getSunset().plusMinutes(30);
 
             if (sunset.plusHours(automaticLightningDuration).isAfter(LocalDateTime.now()) && sunset.isBefore(LocalDateTime.now())) {
                 scheduleStartLightAndExecute();
@@ -64,9 +65,10 @@ public class LedLightService implements LightService {
                 Date startTime = TimeUtils.fromDateTimeToDate(sunset);
                 taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
             }
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.HOUR_OF_DAY, 23);
 
-            Date stopTime = TimeUtils.fromDateTimeToDate(sunset.plusHours(automaticLightningDuration));
-            taskScheduler.schedule(this::scheduleStopLightAndExecute, stopTime);
+            taskScheduler.schedule(this::scheduleStopLightAndExecute, calendar.toInstant());
         }
     }
 
@@ -97,7 +99,7 @@ public class LedLightService implements LightService {
 
     private void scheduleStartLightAndExecute() {
         startLight(rColor, gColor, bColor);
-        Date startTime = TimeUtils.fromDateTimeToDate(realtimeWeatherService.getSunset().plusDays(1));
+        Date startTime = TimeUtils.fromDateTimeToDate(realtimeWeatherService.getSunset().plusDays(1).plusMinutes(30));
         taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
         log.info("Next start of lightning is scheduled on {}.", startTime);
         loggingService.log("Scheduled periodic start lightning according to sunset[" + startTime.toString() + "].", ServiceType.LIGHTNING);
@@ -105,11 +107,10 @@ public class LedLightService implements LightService {
 
     private void scheduleStopLightAndExecute() {
         stopLight();
-        Date stopTime = TimeUtils.fromDateTimeToDate(
-                realtimeWeatherService.getSunset().plusHours(automaticLightningDuration).plusDays(1)
-        );
-        taskScheduler.schedule(this::scheduleStopLightAndExecute, stopTime);
-        log.info("Next stop of lightning is scheduled on {}.", stopTime);
-        loggingService.log("Scheduled periodic lightning stop according to sunset[" + stopTime.toString() + "].", ServiceType.LIGHTNING);
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        taskScheduler.schedule(this::scheduleStopLightAndExecute, calendar.toInstant());
+        log.info("Next stop of lightning is scheduled on {}.", calendar.toInstant());
+        loggingService.log("Scheduled periodic lightning stop according to sunset[" + calendar.toInstant().toString() + "].", ServiceType.LIGHTNING);
     }
 }
