@@ -18,6 +18,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.TimeZone;
 
 @Service
 @Slf4j
@@ -65,10 +66,8 @@ public class LedLightService implements LightService {
                 Date startTime = TimeUtils.fromDateTimeToDate(sunset);
                 taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
             }
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(Calendar.HOUR_OF_DAY, 23);
 
-            taskScheduler.schedule(this::scheduleStopLightAndExecute, calendar.toInstant());
+            taskScheduler.schedule(this::scheduleStopLightAndExecute, getNextStopLightDate());
         }
     }
 
@@ -107,10 +106,17 @@ public class LedLightService implements LightService {
 
     private void scheduleStopLightAndExecute() {
         stopLight();
+        Date stopDateTime = getNextStopLightDate();
+        taskScheduler.schedule(this::scheduleStopLightAndExecute, stopDateTime);
+        log.info("Next stop of lightning is scheduled on {}.", stopDateTime);
+        loggingService.log("Scheduled periodic lightning stop according to sunset[" + stopDateTime.toString() + "].", ServiceType.LIGHTNING);
+    }
+
+    private Date getNextStopLightDate(){
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.HOUR_OF_DAY, 23);
-        taskScheduler.schedule(this::scheduleStopLightAndExecute, calendar.toInstant());
-        log.info("Next stop of lightning is scheduled on {}.", calendar.toInstant());
-        loggingService.log("Scheduled periodic lightning stop according to sunset[" + calendar.toInstant().toString() + "].", ServiceType.LIGHTNING);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.setTimeZone(TimeZone.getTimeZone(TimeUtils.ZONE_ID));
+        return calendar.getTime();
     }
 }
