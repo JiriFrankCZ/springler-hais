@@ -9,6 +9,7 @@ public final class ApplicationLocation {
     public static final String MQ_QUEUE_MEASUREMENTS = "springler.measurings";
     public static final String MQ_QUEUE_DEFAULT_EXCHANGE = "amq.topic";
     public static final String MQ_QUEUE_ACTIONS = "springler.actions";
+    public static final String MQ_QUEUE_LOGS = "springler.logs";
 
     private ApplicationLocation() {
     }

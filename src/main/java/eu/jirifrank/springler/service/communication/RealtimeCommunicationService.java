@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.jirifrank.springler.api.action.Action;
 import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.ApplicationLocation;
+import eu.jirifrank.springler.api.request.LogRequest;
 import eu.jirifrank.springler.api.request.SensorReadRequest;
 import eu.jirifrank.springler.service.logging.LoggingService;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
@@ -65,10 +66,33 @@ public class RealtimeCommunicationService implements CommunicationService {
 
         sensorReadRepository.save(sensorRead);
         loggingService.log("Sensor read["
-                + sensorReadRequest.getSensorType() + " ,"
-                + sensorReadRequest.getLocation() + ", "
-                + sensorReadRequest.getValue() + "] was saved.",
+                        + sensorReadRequest.getSensorType() + " ,"
+                        + sensorReadRequest.getLocation() + ", "
+                        + sensorReadRequest.getValue() + "] was saved.",
                 sensorReadRequest.getServiceType()
+        );
+    }
+
+    @RabbitListener(queues = {ApplicationLocation.MQ_QUEUE_LOGS})
+    public void recieveLogMessage(Message message) {
+        log.debug(message.toString());
+
+        LogRequest logRequest = deserializeFromByteArray(message.getBody(), LogRequest.class);
+
+        if (logRequest == null || !validator.validate(logRequest).isEmpty()) {
+            log.warn("Message thrown away.", message);
+            return;
+        }
+
+        loggingService.log(
+                logRequest.getMessage(),
+                logRequest.getServiceType()
+        );
+
+        loggingService.log("Log request["
+                        + logRequest.getMessage() + " ,"
+                        + logRequest.getServiceType() + "] was saved.",
+                logRequest.getServiceType()
         );
     }
 
