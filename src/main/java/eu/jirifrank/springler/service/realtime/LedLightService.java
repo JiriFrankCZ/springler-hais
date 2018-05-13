@@ -30,14 +30,8 @@ public class LedLightService implements LightService {
     @Value("${lightning.duration}")
     private Integer automaticLightningDuration;
 
-    @Value("${lightning.color.r}")
-    private Integer rColor;
-
-    @Value("${lightning.color.g}")
-    private Integer gColor;
-
-    @Value("${lightning.color.b}")
-    private Integer bColor;
+    @Value("${lightning.color}")
+    private Integer defaultColor;
 
     @Autowired
     private CommunicationService communicationService;
@@ -72,9 +66,9 @@ public class LedLightService implements LightService {
     }
 
     @Override
-    public void startLight(int r, int g, int b) {
-        log.info("Lightning command will be sent with combination of RGB({},{},{}).", r, b, b);
-        LightData data = new LightData(r, g, b, null);
+    public void startLight(int color) {
+        log.info("Lightning command will be sent with color {}.", color);
+        LightData data = new LightData(color, null);
         Action action = new Action(DeviceAction.START_LIGHT, data);
         communicationService.sendActionMessage(action);
         loggingService.log("Lightning command has been sent.", ServiceType.LIGHTNING);
@@ -89,15 +83,15 @@ public class LedLightService implements LightService {
     }
 
     @Override
-    public void scheduleLight(int r, int g, int b, long duration) {
+    public void scheduleLight(int color, long duration) {
         log.info("Scheduled lightning for concrete period[{}s].", duration);
-        startLight(r, g, b);
+        startLight(color);
         taskScheduler.schedule(this::stopLight, Instant.now().plusSeconds(duration));
         loggingService.log("Scheduled lightning for concrete period " + duration + "s.", ServiceType.LIGHTNING);
     }
 
     private void scheduleStartLightAndExecute() {
-        startLight(rColor, gColor, bColor);
+        startLight(defaultColor);
         Date startTime = TimeUtils.fromDateTimeToDate(realtimeWeatherService.getSunset().plusDays(1).plusMinutes(30));
         taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
         log.info("Next start of lightning is scheduled on {}.", startTime);

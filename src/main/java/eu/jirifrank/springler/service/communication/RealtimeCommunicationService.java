@@ -88,12 +88,6 @@ public class RealtimeCommunicationService implements CommunicationService {
                 logRequest.getMessage(),
                 logRequest.getServiceType()
         );
-
-        loggingService.log("Log request["
-                        + logRequest.getMessage() + " ,"
-                        + logRequest.getServiceType() + "] was saved.",
-                logRequest.getServiceType()
-        );
     }
 
     @Override

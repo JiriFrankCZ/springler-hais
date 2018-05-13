@@ -6,8 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class LightData implements ActionObject {
-    private Integer rColor;
-    private Integer gColor;
-    private Integer bColor;
+    private Integer color;
     private Long duration;
 }
