@@ -16,9 +16,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Calendar;
 import java.util.Date;
-import java.util.TimeZone;
 
 @Service
 @Slf4j
@@ -61,7 +59,13 @@ public class LedLightService implements LightService {
                 taskScheduler.schedule(this::scheduleStartLightAndExecute, startTime);
             }
 
-            taskScheduler.schedule(this::scheduleStopLightAndExecute, getNextStopLightDate());
+            Instant stopDateTime = LocalDateTime.now()
+                    .withHour(23)
+                    .withMinute(0)
+                    .atZone(TimeUtils.ZONE_ID)
+                    .toInstant();
+
+            taskScheduler.schedule(this::scheduleStopLightAndExecute, stopDateTime);
         }
     }
 
@@ -100,17 +104,16 @@ public class LedLightService implements LightService {
 
     private void scheduleStopLightAndExecute() {
         stopLight();
-        Date stopDateTime = getNextStopLightDate();
+
+        Instant stopDateTime = LocalDateTime.now()
+                .plusDays(1)
+                .withHour(23)
+                .withMinute(0)
+                .atZone(TimeUtils.ZONE_ID)
+                .toInstant();
+
         taskScheduler.schedule(this::scheduleStopLightAndExecute, stopDateTime);
         log.info("Next stop of lightning is scheduled on {}.", stopDateTime);
         loggingService.log("Scheduled periodic lightning stop according to sunset[" + stopDateTime.toString() + "].", ServiceType.LIGHTNING);
-    }
-
-    private Date getNextStopLightDate(){
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 23);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.setTimeZone(TimeZone.getTimeZone(TimeUtils.ZONE_ID));
-        return calendar.getTime();
     }
 }
