@@ -68,7 +68,7 @@ public class DarkSkyWeatherService implements WeatherService {
             weatherForecast.setWindSpeed(NumberUtils.roundToHalf(data.getWindSpeed()));
             weatherForecast.setSummary(data.getSummary());
             weatherForecast.setRainProbability((data.getPrecipType() != null && data.getPrecipType().equalsIgnoreCase(PRECIPE_TYPE_RAIN))
-                    ? NumberUtils.roundToHalf(data.getPrecipProbability()) : 0);
+                    ? NumberUtils.roundToHalf(data.getPrecipProbability() * 100) : 0);
 
             log.debug("Weather forecast resolved {}.", weatherForecast);
 
