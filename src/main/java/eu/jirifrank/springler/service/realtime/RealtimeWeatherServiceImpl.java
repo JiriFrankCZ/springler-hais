@@ -5,7 +5,6 @@ import eu.jirifrank.springler.api.enums.Location;
 import eu.jirifrank.springler.api.enums.SensorType;
 import eu.jirifrank.springler.api.enums.ServiceType;
 import eu.jirifrank.springler.api.model.weather.WeatherForecast;
-import eu.jirifrank.springler.service.notification.NotificationService;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import eu.jirifrank.springler.service.weather.WeatherService;
 import eu.jirifrank.springler.util.NumberUtils;
@@ -66,7 +65,7 @@ public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
                         .sensorType(SensorType.HUMIDITY)
                         .created(new Date())
                         .location(Location.ALL)
-                        .value(NumberUtils.roundToHalf(weatherForecast.getHumidity()))
+                        .value(NumberUtils.roundToHalf(weatherForecast.getHumidity() * 100))
                         .build()
         );
 
