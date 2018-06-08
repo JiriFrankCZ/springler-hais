@@ -104,7 +104,8 @@ public class IrrigationServiceImpl implements IrrigationService {
     public void wateringCheck() {
         LOCATIONS.forEach(location -> {
             Optional<SensorRead> soilMoistureSensorReadOpt = filterSensorReadByLocation(soilMoistureList, location);
-            if (!weatherService.isRainPredicted() && soilMoistureSensorReadOpt.isPresent() && soilMoistureSensorReadOpt.get().getValue() < (soilMoistureIdeal - soilMoistureThreshold)) {
+            if (!weatherService.isRainPredicted() && soilMoistureSensorReadOpt.isPresent() && soilMoistureSensorReadOpt.get().getValue()
+                    < (soilMoistureIdeal - soilMoistureThreshold)) {
                 Optional<ScoredIrrigation> similarIrrigation = findSimilarOrLast(location);
 
                 final Irrigation irrigation;
@@ -117,7 +118,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                     irrigation.setDuration(getDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigation.getCorrection())));
                     irrigation.setCorrection(null);
                     irrigation.setIteration(irrigation.getIteration() + 1);
-                 } else if(similarIrrigation.isPresent()){
+                } else if (similarIrrigation.isPresent()) {
                     log.debug("No similar irrigation found for given combination, starting with best available irrigation.");
                     irrigation = Irrigation.builder()
                             .created(new Date())
@@ -132,7 +133,8 @@ public class IrrigationServiceImpl implements IrrigationService {
                         Irrigation irrigationPast = scoredIrrigationPast.getIrrigation();
                         irrigation.setDuration(getDuration(irrigationPast.getDuration()));
                         if (irrigationPast.getCorrection() != null) {
-                            irrigation.setDuration(getDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigationPast.getCorrection())));
+                            irrigation.setDuration(getDuration(NumberUtils.roundToHalf(irrigation.getDuration() + irrigationPast
+                                    .getCorrection())));
                         }
                     });
                 } else {
@@ -146,7 +148,6 @@ public class IrrigationServiceImpl implements IrrigationService {
                             .rainProbability(weatherService.getRainProbability())
                             .duration(getDuration(null))
                             .build();
-
                 }
 
                 irrigationRepository.save(irrigation);
@@ -280,7 +281,6 @@ public class IrrigationServiceImpl implements IrrigationService {
                     SensorRead sensorReadActual = filterSensorReadByLocation(humidityList, sensorRead.getLocation()).get();
                     score[0] += HUMIDITY_WEIGHT * Math.abs(sensorRead.getValue() - sensorReadActual.getValue());
                 });
-
 
         score[0] += RAIN_PROBABILITY_WEIGHT * Math.abs(irrigation.getRainProbability() - weatherService.getRainProbability());
 

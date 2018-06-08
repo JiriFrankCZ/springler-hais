@@ -1,8 +1,14 @@
 package eu.jirifrank.springler.service.realtime;
 
+import eu.jirifrank.springler.api.entity.SensorRead;
+import eu.jirifrank.springler.api.enums.Location;
+import eu.jirifrank.springler.api.enums.SensorType;
+import eu.jirifrank.springler.api.enums.ServiceType;
 import eu.jirifrank.springler.api.model.weather.WeatherForecast;
 import eu.jirifrank.springler.service.notification.NotificationService;
+import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import eu.jirifrank.springler.service.weather.WeatherService;
+import eu.jirifrank.springler.util.NumberUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,13 +17,13 @@ import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @Service
 @Slf4j
 public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
-
-    @Autowired
-    private NotificationService notificationService;
 
     @Value("${weather.rain.threshold}")
     private Double rainProbabilityThreshold;
@@ -26,6 +32,9 @@ public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
 
     @Autowired
     private WeatherService weatherService;
+
+    @Autowired
+    private SensorReadRepository sensorReadRepository;
 
     @PostConstruct
     public void init() {
@@ -38,6 +47,41 @@ public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
     public void periodicUpdate() {
         log.info("Periodic weather forecast update started.");
         weatherForecast = weatherService.getForecast();
+
+        List<SensorRead> sensorReadList = new ArrayList<>();
+
+        sensorReadList.add(
+                SensorRead.builder()
+                        .serviceType(ServiceType.WEATHER)
+                        .sensorType(SensorType.RAIN)
+                        .created(new Date())
+                        .location(Location.ALL)
+                        .value(NumberUtils.roundToHalf(weatherForecast.getRainProbability()))
+                        .build()
+        );
+
+        sensorReadList.add(
+                SensorRead.builder()
+                        .serviceType(ServiceType.WEATHER)
+                        .sensorType(SensorType.HUMIDITY)
+                        .created(new Date())
+                        .location(Location.ALL)
+                        .value(NumberUtils.roundToHalf(weatherForecast.getHumidity()))
+                        .build()
+        );
+
+        sensorReadList.add(
+                SensorRead.builder()
+                        .serviceType(ServiceType.WEATHER)
+                        .sensorType(SensorType.TEMPERATURE)
+                        .created(new Date())
+                        .location(Location.ALL)
+                        .value(NumberUtils.roundToHalf(weatherForecast.getMaxTemperature()))
+                        .build()
+        );
+
+        sensorReadRepository.saveAll(sensorReadList);
+
         log.info("Periodic weather forecast update finished with actual data resolved.");
     }
 

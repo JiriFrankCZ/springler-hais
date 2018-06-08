@@ -4,5 +4,6 @@ public enum ServiceType {
     IRRIGATION,
     LIGHTNING,
     SOLAR_ENERGY,
-    MAINTENANCE
+    MAINTENANCE,
+    WEATHER
 }
