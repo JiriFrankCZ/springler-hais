@@ -65,7 +65,7 @@ public class RealtimeWeatherServiceImpl implements RealtimeWeatherService {
                         .sensorType(SensorType.HUMIDITY)
                         .created(new Date())
                         .location(Location.ALL)
-                        .value(NumberUtils.roundToHalf(weatherForecast.getHumidity() * 100))
+                        .value(NumberUtils.roundToHalf(weatherForecast.getHumidity()))
                         .build()
         );
 

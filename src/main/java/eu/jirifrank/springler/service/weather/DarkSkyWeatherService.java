@@ -64,7 +64,7 @@ public class DarkSkyWeatherService implements WeatherService {
             weatherForecast.setMinTemperature(NumberUtils.roundToHalf(data.getTemperatureMin()));
             weatherForecast.setSunrise(data.getSunriseTime());
             weatherForecast.setSunset(data.getSunsetTime());
-            weatherForecast.setHumidity(NumberUtils.roundToHalf(data.getHumidity()));
+            weatherForecast.setHumidity(NumberUtils.roundToHalf(data.getHumidity() * 100));
             weatherForecast.setWindSpeed(NumberUtils.roundToHalf(data.getWindSpeed()));
             weatherForecast.setSummary(data.getSummary());
             weatherForecast.setRainProbability((data.getPrecipType() != null && data.getPrecipType().equalsIgnoreCase(PRECIPE_TYPE_RAIN))
