@@ -29,6 +29,5 @@ public class SensorReadRequest {
     @NotNull
     private Location location;
 
-    @NotNull
-    private Date created;
+    private Date created = new Date();
 }

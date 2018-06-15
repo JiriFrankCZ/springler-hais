@@ -1,6 +1,7 @@
 package eu.jirifrank.springler.service.communication;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.jirifrank.springler.api.action.Action;
 import eu.jirifrank.springler.api.entity.SensorRead;
@@ -30,7 +31,8 @@ import java.util.Optional;
 @Slf4j
 public class RealtimeCommunicationService implements CommunicationService {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private static final Validator validator;
 
