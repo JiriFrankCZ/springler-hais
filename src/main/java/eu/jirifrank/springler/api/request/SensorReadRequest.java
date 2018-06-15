@@ -9,6 +9,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotNull;
+import java.util.Date;
 
 @Data
 @NoArgsConstructor
@@ -27,4 +28,7 @@ public class SensorReadRequest {
 
     @NotNull
     private Location location;
+
+    @NotNull
+    private Date created;
 }

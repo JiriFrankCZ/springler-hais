@@ -7,6 +7,7 @@ import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.ApplicationLocation;
 import eu.jirifrank.springler.api.request.LogRequest;
 import eu.jirifrank.springler.api.request.SensorReadRequest;
+import eu.jirifrank.springler.api.request.SensorReadRequestList;
 import eu.jirifrank.springler.service.logging.LoggingService;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import eu.jirifrank.springler.util.NumberUtils;
@@ -21,7 +22,9 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -49,28 +52,38 @@ public class RealtimeCommunicationService implements CommunicationService {
     public void recieveSensorMessage(Message message) {
         log.debug(message.toString());
 
-        SensorReadRequest sensorReadRequest = deserializeFromByteArray(message.getBody(), SensorReadRequest.class);
+        Optional.ofNullable(deserializeFromByteArray(message.getBody(), SensorReadRequestList.class))
+                .or(() -> {
+                    SensorReadRequest sensorReadRequest = deserializeFromByteArray(message.getBody(), SensorReadRequest.class);
+                    if (sensorReadRequest != null) {
+                        return Optional.of(new SensorReadRequestList(Arrays.asList(sensorReadRequest)));
+                    } else {
+                        return Optional.empty();
+                    }
+                }).ifPresent(sensorReadRequestList -> sensorReadRequestList.getSensorReadRequestList()
+                .parallelStream()
+                .forEach(sensorReadRequest -> {
+                    if (sensorReadRequest == null || !validator.validate(sensorReadRequest).isEmpty()) {
+                        log.warn("Message thrown away.", message);
+                        return;
+                    }
 
-        if (sensorReadRequest == null || !validator.validate(sensorReadRequest).isEmpty()) {
-            log.warn("Message thrown away.", message);
-            return;
-        }
+                    SensorRead sensorRead = SensorRead.builder()
+                            .serviceType(sensorReadRequest.getServiceType())
+                            .sensorType(sensorReadRequest.getSensorType())
+                            .created(sensorReadRequest.getCreated() == null ? new Date() : sensorReadRequest.getCreated())
+                            .location(sensorReadRequest.getLocation())
+                            .value(NumberUtils.roundToHalf(sensorReadRequest.getValue()))
+                            .build();
 
-        SensorRead sensorRead = SensorRead.builder()
-                .serviceType(sensorReadRequest.getServiceType())
-                .sensorType(sensorReadRequest.getSensorType())
-                .created(new Date())
-                .location(sensorReadRequest.getLocation())
-                .value(NumberUtils.roundToHalf(sensorReadRequest.getValue()))
-                .build();
-
-        sensorReadRepository.save(sensorRead);
-        loggingService.log("Sensor read["
-                        + sensorReadRequest.getSensorType() + " ,"
-                        + sensorReadRequest.getLocation() + ", "
-                        + sensorReadRequest.getValue() + "] was saved.",
-                sensorReadRequest.getServiceType()
-        );
+                    sensorReadRepository.save(sensorRead);
+                    loggingService.log("Sensor read["
+                                    + sensorReadRequest.getSensorType() + " ,"
+                                    + sensorReadRequest.getLocation() + ", "
+                                    + sensorReadRequest.getValue() + "] was saved.",
+                            sensorReadRequest.getServiceType()
+                    );
+                }));
     }
 
     @RabbitListener(queues = {ApplicationLocation.MQ_QUEUE_LOGS})
