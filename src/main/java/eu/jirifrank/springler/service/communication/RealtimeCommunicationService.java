@@ -22,6 +22,7 @@ import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import java.io.IOException;
+import java.util.Date;
 
 @Service
 @Slf4j
@@ -68,7 +69,7 @@ public class RealtimeCommunicationService implements CommunicationService {
                     SensorRead sensorRead = SensorRead.builder()
                             .serviceType(sensorReadRequest.getServiceType())
                             .sensorType(sensorReadRequest.getSensorType())
-                            .created(message.getMessageProperties().getTimestamp())
+                            .created(new Date())
                             .location(sensorReadRequest.getLocation())
                             .value(NumberUtils.roundToHalf(sensorReadRequest.getValue()))
                             .build();
