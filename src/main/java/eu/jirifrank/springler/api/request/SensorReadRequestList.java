@@ -12,5 +12,5 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class SensorReadRequestList {
-    private List<SensorReadRequest> sensorReadRequestList;
+    private List<SensorReadRequest> data;
 }

@@ -6,7 +6,6 @@ import eu.jirifrank.springler.api.action.Action;
 import eu.jirifrank.springler.api.entity.SensorRead;
 import eu.jirifrank.springler.api.enums.ApplicationLocation;
 import eu.jirifrank.springler.api.request.LogRequest;
-import eu.jirifrank.springler.api.request.SensorReadRequest;
 import eu.jirifrank.springler.api.request.SensorReadRequestList;
 import eu.jirifrank.springler.service.logging.LoggingService;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
@@ -18,13 +17,11 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import javax.validation.Validation;
 import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Optional;
 
 @Service
 @Slf4j
@@ -48,19 +45,19 @@ public class RealtimeCommunicationService implements CommunicationService {
     @Autowired
     private LoggingService loggingService;
 
+    @Transactional
     @RabbitListener(queues = {ApplicationLocation.MQ_QUEUE_MEASUREMENTS})
-    public void recieveSensorMessage(Message message) {
+    public void receiveSensorMessage(Message message) {
         log.debug(message.toString());
 
-        Optional.ofNullable(deserializeFromByteArray(message.getBody(), SensorReadRequestList.class))
-                .or(() -> {
-                    SensorReadRequest sensorReadRequest = deserializeFromByteArray(message.getBody(), SensorReadRequest.class);
-                    if (sensorReadRequest != null) {
-                        return Optional.of(new SensorReadRequestList(Arrays.asList(sensorReadRequest)));
-                    } else {
-                        return Optional.empty();
-                    }
-                }).ifPresent(sensorReadRequestList -> sensorReadRequestList.getSensorReadRequestList()
+        SensorReadRequestList sensorReadRequestList = deserializeFromByteArray(message.getBody(), SensorReadRequestList.class);
+
+        if (sensorReadRequestList == null || sensorReadRequestList.getData() == null) {
+            log.warn("Not valid message on input stream.");
+            return;
+        }
+
+        sensorReadRequestList.getData()
                 .parallelStream()
                 .forEach(sensorReadRequest -> {
                     if (sensorReadRequest == null || !validator.validate(sensorReadRequest).isEmpty()) {
@@ -71,7 +68,7 @@ public class RealtimeCommunicationService implements CommunicationService {
                     SensorRead sensorRead = SensorRead.builder()
                             .serviceType(sensorReadRequest.getServiceType())
                             .sensorType(sensorReadRequest.getSensorType())
-                            .created(sensorReadRequest.getCreated() == null ? new Date() : sensorReadRequest.getCreated())
+                            .created(message.getMessageProperties().getTimestamp())
                             .location(sensorReadRequest.getLocation())
                             .value(NumberUtils.roundToHalf(sensorReadRequest.getValue()))
                             .build();
@@ -83,7 +80,7 @@ public class RealtimeCommunicationService implements CommunicationService {
                                     + sensorReadRequest.getValue() + "] was saved.",
                             sensorReadRequest.getServiceType()
                     );
-                }));
+                });
     }
 
     @RabbitListener(queues = {ApplicationLocation.MQ_QUEUE_LOGS})
