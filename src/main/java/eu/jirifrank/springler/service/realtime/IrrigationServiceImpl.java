@@ -313,13 +313,13 @@ public class IrrigationServiceImpl implements IrrigationService {
         final SoilMoisture[] soilMoisture = {SoilMoisture.NORMAL};
 
         filterSensorReadByLocation(soilMoistureList, location).ifPresent(sensorRead -> {
-            if((soilMoistureIdeal - soilMoistureExtremeThreshold) < sensorRead.getValue()){
+            if ((soilMoistureIdeal - soilMoistureExtremeThreshold) > sensorRead.getValue()) {
                 soilMoisture[0] = SoilMoisture.EXTRA_DRY;
-            }else if((soilMoistureIdeal - soilMoistureThreshold) < sensorRead.getValue()){
+            } else if ((soilMoistureIdeal - soilMoistureThreshold) > sensorRead.getValue()) {
                 soilMoisture[0] = SoilMoisture.DRY;
-            }else if((soilMoistureIdeal + soilMoistureExtremeThreshold) >  sensorRead.getValue()){
+            } else if ((soilMoistureIdeal + soilMoistureExtremeThreshold) < sensorRead.getValue()) {
                 soilMoisture[0] = SoilMoisture.EXTRA_WET;
-            }else if((soilMoistureIdeal + soilMoistureThreshold) >  sensorRead.getValue()){
+            } else if ((soilMoistureIdeal + soilMoistureThreshold) < sensorRead.getValue()) {
                 soilMoisture[0] = SoilMoisture.WET;
             }else{
                 soilMoisture[0] = SoilMoisture.NORMAL;
