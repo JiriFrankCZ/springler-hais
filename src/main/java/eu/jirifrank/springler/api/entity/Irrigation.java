@@ -25,7 +25,7 @@ public class Irrigation {
     @Column
     private long id;
 
-    @ManyToMany(cascade = {CascadeType.REFRESH, CascadeType.MERGE}, fetch = FetchType.LAZY)
+    @ManyToMany(cascade = {CascadeType.REFRESH, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinTable(
             name = "irrigation_sensor_reads",
             joinColumns = @JoinColumn(name = "irrigation_id", referencedColumnName = "id"),

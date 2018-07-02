@@ -209,6 +209,7 @@ public class IrrigationServiceImpl implements IrrigationService {
 
     @Transactional
     protected void backpropagateResults(Irrigation irrigation) {
+        irrigationRepository.refresh(irrigation);
         log.info("Evaluating efficiency of irrigation {}.", irrigation);
 
         final double topBoundary = soilMoistureIdeal + soilMoistureThreshold;

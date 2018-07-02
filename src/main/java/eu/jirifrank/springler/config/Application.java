@@ -2,9 +2,9 @@ package eu.jirifrank.springler.config;
 
 import eu.jirifrank.springler.api.enums.ApplicationLocation;
 import eu.jirifrank.springler.service.notification.NotificationService;
+import eu.jirifrank.springler.service.persistence.ImprovedCrudRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.Bean;
@@ -22,12 +22,11 @@ import javax.sql.DataSource;
 import java.util.concurrent.Executor;
 
 @EnableAsync
-@EnableJpaRepositories(basePackages = ApplicationLocation.REPOSITORIES)
+@EnableJpaRepositories(basePackages = ApplicationLocation.REPOSITORIES, repositoryBaseClass = ImprovedCrudRepositoryImpl.class)
 @EnableRetry
 @EnableScheduling
 @EntityScan(basePackages = ApplicationLocation.ENTITIES)
 @SpringBootApplication(scanBasePackages = ApplicationLocation.BASE_PACKAGE)
-@EnableAutoConfiguration
 @EnableTransactionManagement
 public class Application {
 
