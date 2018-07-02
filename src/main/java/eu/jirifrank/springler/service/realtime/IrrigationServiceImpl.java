@@ -48,8 +48,11 @@ public class IrrigationServiceImpl implements IrrigationService {
     @Value("${watering.soil.moisture.ideal}")
     private Double soilMoistureIdeal;
 
-    @Value("${watering.soil.moisture.threshold}")
+    @Value("${watering.soil.moisture.threshold.standard}")
     private Double soilMoistureThreshold;
+
+    @Value("${watering.soil.moisture.threshold.extreme}")
+    private Double soilMoistureExtremeThreshold;
 
     @Value("${watering.duration.default}")
     private Double defaultWateringDuration;
@@ -103,9 +106,19 @@ public class IrrigationServiceImpl implements IrrigationService {
     @Transactional
     public void wateringCheck() {
         LOCATIONS.forEach(location -> {
-            Optional<SensorRead> soilMoistureSensorReadOpt = filterSensorReadByLocation(soilMoistureList, location);
-            if (!weatherService.isRainPredicted() && soilMoistureSensorReadOpt.isPresent() && soilMoistureSensorReadOpt.get().getValue()
-                    < (soilMoistureIdeal - soilMoistureThreshold)) {
+            SoilMoisture soilMoisture = getSoilMoistureInLocation(location);
+
+            log.info(
+                    "Check for irrigation. [Location = {}, Soil moisture level = {}, Rain probability = {}]",
+                    location,
+                    soilMoisture,
+                    weatherService.getRainProbability()
+            );
+
+            boolean extraDryOrDryRainNotPredicted = Arrays.asList(SoilMoisture.EXTRA_DRY, SoilMoisture.DRY).contains(soilMoisture) && !weatherService.isRainPredicted();
+            boolean extraDryAndRainIsPredicted= SoilMoisture.EXTRA_DRY.equals(soilMoisture) && weatherService.isRainPredicted();
+
+            if (extraDryOrDryRainNotPredicted || extraDryAndRainIsPredicted) {
                 Optional<ScoredIrrigation> similarIrrigation = findSimilarOrLast(location);
 
                 final Irrigation irrigation;
@@ -163,16 +176,9 @@ public class IrrigationServiceImpl implements IrrigationService {
                         "Watering for " + location + " was scheduled with duration " + irrigation.getDuration() + "s.",
                         ServiceType.IRRIGATION
                 );
-            } else if (weatherService.isRainPredicted()) {
-                log.info("Expected rain bypassed watering.");
-                loggingService.log(
-                        "Watering for " + location + " needed, but expected rain ["
-                                + weatherService.getRainProbability() + "] bypassed watering.",
-                        ServiceType.IRRIGATION
-                );
             } else {
-                log.info("Soil moisture in location {} is high enough, watering not needed.", location);
-                loggingService.log("Soil moisture in location " + location + " is high enough, watering not needed.",
+                log.info("Soil moisture in location {} is high enough, watering not needed or rain expected.", location);
+                loggingService.log("Soil moisture in location " + location + " is high enough, watering not needed or rain expected.",
                         ServiceType.IRRIGATION
                 );
             }
@@ -301,5 +307,25 @@ public class IrrigationServiceImpl implements IrrigationService {
         return sensorReadList.stream()
                 .filter(sensorRead -> sensorRead.getLocation().equals(location) || sensorRead.getLocation().equals(Location.ALL))
                 .findFirst();
+    }
+
+    private SoilMoisture getSoilMoistureInLocation(Location location){
+        final SoilMoisture[] soilMoisture = {SoilMoisture.NORMAL};
+
+        filterSensorReadByLocation(soilMoistureList, location).ifPresent(sensorRead -> {
+            if((soilMoistureIdeal - soilMoistureExtremeThreshold) < sensorRead.getValue()){
+                soilMoisture[0] = SoilMoisture.EXTRA_DRY;
+            }else if((soilMoistureIdeal - soilMoistureThreshold) < sensorRead.getValue()){
+                soilMoisture[0] = SoilMoisture.DRY;
+            }else if((soilMoistureIdeal + soilMoistureExtremeThreshold) >  sensorRead.getValue()){
+                soilMoisture[0] = SoilMoisture.EXTRA_WET;
+            }else if((soilMoistureIdeal + soilMoistureThreshold) >  sensorRead.getValue()){
+                soilMoisture[0] = SoilMoisture.WET;
+            }else{
+                soilMoisture[0] = SoilMoisture.NORMAL;
+            }
+        });
+
+        return soilMoisture[0];
     }
 }
