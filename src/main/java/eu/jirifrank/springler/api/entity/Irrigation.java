@@ -58,4 +58,14 @@ public class Irrigation {
     @Column
     @Temporal(TemporalType.TIMESTAMP)
     private Date updated;
+
+    @Override
+    public String toString() {
+        return "Irrigation{" +
+                "id=" + id +
+                ", location=" + location +
+                ", duration=" + duration +
+                ", created=" + created +
+                '}';
+    }
 }

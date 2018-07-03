@@ -116,7 +116,7 @@ public class IrrigationServiceImpl implements IrrigationService {
             );
 
             boolean extraDryOrDryRainNotPredicted = Arrays.asList(SoilMoisture.EXTRA_DRY, SoilMoisture.DRY).contains(soilMoisture) && !weatherService.isRainPredicted();
-            boolean extraDryAndRainIsPredicted= SoilMoisture.EXTRA_DRY.equals(soilMoisture) && weatherService.isRainPredicted();
+            boolean extraDryAndRainIsPredicted = SoilMoisture.EXTRA_DRY.equals(soilMoisture) && weatherService.isRainPredicted();
 
             if (extraDryOrDryRainNotPredicted || extraDryAndRainIsPredicted) {
                 Optional<ScoredIrrigation> similarIrrigation = findSimilarOrLast(location);
@@ -169,7 +169,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                 Action action = new Action(DeviceAction.WATER, wateringData);
                 communicationService.sendActionMessage(action);
 
-                taskScheduler.schedule(() -> this.backpropagateResults(irrigation), Instant.now().plus(15l, MINUTES));
+                taskScheduler.schedule(() -> this.backpropagateResults(irrigation.getId()), Instant.now().plus(15l, MINUTES));
 
                 log.info("Scheduled watering {} and submitted for processing.", wateringData);
                 loggingService.log(
@@ -208,36 +208,38 @@ public class IrrigationServiceImpl implements IrrigationService {
     }
 
     @Transactional
-    protected void backpropagateResults(Irrigation irrigation) {
-        irrigationRepository.refresh(irrigation);
-        log.info("Evaluating efficiency of irrigation {}.", irrigation);
+    protected void backpropagateResults(Long irrigationId) {
+        irrigationRepository.findById(irrigationId).ifPresent(irrigation -> {
+            log.info("Evaluating efficiency of irrigation {}.", irrigation);
 
-        final double topBoundary = soilMoistureIdeal + soilMoistureThreshold;
-        final double bottomBoundary = soilMoistureIdeal - soilMoistureThreshold;
+            final double topBoundary = soilMoistureIdeal + soilMoistureThreshold;
+            final double bottomBoundary = soilMoistureIdeal - soilMoistureThreshold;
 
-        double correctionCoefficient = 0.0;
+            double correctionCoefficient = 0.0;
 
-        double soilMoistureValue = filterSensorReadByLocation(soilMoistureList, irrigation.getLocation()).get().getValue();
-        if (soilMoistureValue > topBoundary) {
-            correctionCoefficient = topBoundary / soilMoistureValue;
-        } else if (soilMoistureValue < bottomBoundary) {
-            correctionCoefficient = bottomBoundary / soilMoistureValue;
-        } else if (soilMoistureValue < topBoundary && soilMoistureValue > soilMoistureIdeal) {
-            correctionCoefficient = soilMoistureIdeal / soilMoistureValue;
-        } else if (soilMoistureValue > bottomBoundary && soilMoistureValue < soilMoistureIdeal) {
-            correctionCoefficient = soilMoistureIdeal / soilMoistureValue;
-        }
+            double soilMoistureValue = filterSensorReadByLocation(soilMoistureList, irrigation.getLocation()).get().getValue();
+            if (soilMoistureValue > topBoundary) {
+                correctionCoefficient = topBoundary / soilMoistureValue;
+            } else if (soilMoistureValue < bottomBoundary) {
+                correctionCoefficient = bottomBoundary / soilMoistureValue;
+            } else if (soilMoistureValue < topBoundary && soilMoistureValue > soilMoistureIdeal) {
+                correctionCoefficient = soilMoistureIdeal / soilMoistureValue;
+            } else if (soilMoistureValue > bottomBoundary && soilMoistureValue < soilMoistureIdeal) {
+                correctionCoefficient = soilMoistureIdeal / soilMoistureValue;
+            }
 
-        double correction = NumberUtils.roundToHalf((irrigation.getDuration() * correctionCoefficient) - irrigation.getDuration());
-        irrigation.setCorrection(correction);
+            double correction = NumberUtils.roundToHalf((irrigation.getDuration() * correctionCoefficient) - irrigation.getDuration());
+            irrigation.setCorrection(correction);
 
-        irrigationRepository.save(irrigation);
+            irrigationRepository.save(irrigation);
 
-        log.info("Evaluation finished. Irrigation {} correction has been set to {}s.", irrigation.getId(), irrigation.getCorrection());
-        loggingService.log("Learning by backpropagation of irrigation[" + irrigation.getId() + "] was updated by " +
-                        irrigation.getCorrection() + ".",
-                ServiceType.IRRIGATION
-        );
+            log.info("Evaluation finished. Irrigation {} correction has been set to {}s.", irrigation.getId(), irrigation.getCorrection());
+            loggingService.log("Learning by backpropagation of irrigation[" + irrigation.getId() + "] was updated by " +
+                            irrigation.getCorrection() + ".",
+                    ServiceType.IRRIGATION
+            );
+
+        });
     }
 
     private Optional<ScoredIrrigation> findSimilarOrLast(Location location) {
@@ -310,7 +312,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                 .findFirst();
     }
 
-    private SoilMoisture getSoilMoistureInLocation(Location location){
+    private SoilMoisture getSoilMoistureInLocation(Location location) {
         final SoilMoisture[] soilMoisture = {SoilMoisture.NORMAL};
 
         filterSensorReadByLocation(soilMoistureList, location).ifPresent(sensorRead -> {
@@ -322,7 +324,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                 soilMoisture[0] = SoilMoisture.EXTRA_WET;
             } else if ((soilMoistureIdeal + soilMoistureThreshold) < sensorRead.getValue()) {
                 soilMoisture[0] = SoilMoisture.WET;
-            }else{
+            } else {
                 soilMoisture[0] = SoilMoisture.NORMAL;
             }
         });
