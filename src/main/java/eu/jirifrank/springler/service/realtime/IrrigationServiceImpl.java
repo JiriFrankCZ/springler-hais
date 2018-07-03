@@ -163,7 +163,7 @@ public class IrrigationServiceImpl implements IrrigationService {
                             .build();
                 }
 
-                irrigationRepository.save(irrigation);
+                irrigation.setId(irrigationRepository.save(irrigation).getId());
 
                 WateringData wateringData = new WateringData(irrigation.getDuration(), irrigation.getLocation());
                 Action action = new Action(DeviceAction.WATER, wateringData);
