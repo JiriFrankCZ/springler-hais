@@ -11,7 +11,7 @@ import java.util.List;
 @Repository
 public interface IrrigationRepository extends ImprovedCrudRepository<Irrigation, Long> {
 
-    @Query(value = "select i from Irrigation i " +
+    @Query(value = "select distinct i from Irrigation i " +
             "join fetch i.sensorReads s " +
             "where (month(i.created) = month(current_date()) or month(i.updated) = month(current_date())) and " +
             "i.location = :location and " +
