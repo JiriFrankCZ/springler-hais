@@ -176,10 +176,9 @@ public class IrrigationServiceImpl implements IrrigationService {
                 taskScheduler.schedule(() -> this.backpropagateResults(irrigation.getId()), Instant.now().plus(15l, MINUTES));
 
                 notificationService.send("Irrigation", String.format(
-                        "Irrigation will be performed on %s location width duration %d.",
+                        "Irrigation will be performed on %s location width duration %f.",
                         irrigation.getLocation(),
-                        irrigation.getDuration())
-                );
+                        irrigation.getDuration()));
 
                 log.info("Scheduled watering {} and submitted for processing.", wateringData);
                 loggingService.log(
