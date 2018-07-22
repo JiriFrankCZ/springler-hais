@@ -11,6 +11,7 @@ import eu.jirifrank.springler.api.enums.ServiceType;
 import eu.jirifrank.springler.api.model.watering.ScoredIrrigation;
 import eu.jirifrank.springler.service.communication.CommunicationService;
 import eu.jirifrank.springler.service.logging.LoggingService;
+import eu.jirifrank.springler.service.notification.NotificationService;
 import eu.jirifrank.springler.service.persistence.IrrigationRepository;
 import eu.jirifrank.springler.service.persistence.SensorReadRepository;
 import eu.jirifrank.springler.util.NumberUtils;
@@ -83,6 +84,9 @@ public class IrrigationServiceImpl implements IrrigationService {
 
     @Autowired
     private LoggingService loggingService;
+
+    @Autowired
+    private NotificationService notificationService;
 
     @Override
     public void doWatering(Double duration, Location location) {
@@ -170,6 +174,12 @@ public class IrrigationServiceImpl implements IrrigationService {
                 communicationService.sendActionMessage(action);
 
                 taskScheduler.schedule(() -> this.backpropagateResults(irrigation.getId()), Instant.now().plus(15l, MINUTES));
+
+                notificationService.send("Irrigation", String.format(
+                        "Irrigation will be performed on %s location width duration %d.",
+                        irrigation.getLocation(),
+                        irrigation.getDuration())
+                );
 
                 log.info("Scheduled watering {} and submitted for processing.", wateringData);
                 loggingService.log(

@@ -47,6 +47,10 @@ public class Application {
 
     @Bean
     public TaskScheduler taskScheduler() {
+        TaskScheduler taskScheduler = new ConcurrentTaskScheduler();
+        ((ConcurrentTaskScheduler) taskScheduler).setErrorHandler(t -> {
+            notificationService.send("Error during processing", t.toString());
+        });
         return new ConcurrentTaskScheduler();
     }
 

@@ -26,6 +26,6 @@ public class EmailNotificationService implements NotificationService {
         message.setTo(emailAddresses);
         message.setSubject(SUBJECT_PREFIX + subject);
         message.setText(text);
-        //emailSender.send(message);
+        emailSender.send(message);
     }
 }
