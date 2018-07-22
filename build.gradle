@@ -46,7 +46,7 @@ dependencies {
             'org.springframework.boot:spring-boot-starter-mail',
             'org.springframework.boot:spring-boot-starter-amqp',
             'org.springframework.boot:spring-boot-starter-actuator',
-            'org.postgresql:postgresql:42.2.1',
+            'org.postgresql:postgresql:42.2.4',
             'javax.xml.bind:jaxb-api:2.3.0',
             'com.h2database:h2:1.4.196',
             'org.springframework.retry:spring-retry',
