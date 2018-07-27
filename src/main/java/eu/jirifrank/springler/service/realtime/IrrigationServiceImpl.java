@@ -325,6 +325,7 @@ public class IrrigationServiceImpl implements IrrigationService {
         final SoilMoisture[] soilMoisture = {SoilMoisture.NORMAL};
 
         filterSensorReadByLocation(soilMoistureList, location).ifPresent(sensorRead -> {
+            log.info(sensorRead.toString());
             if ((soilMoistureIdeal - soilMoistureExtremeThreshold) > sensorRead.getValue()) {
                 soilMoisture[0] = SoilMoisture.EXTRA_DRY;
             } else if ((soilMoistureIdeal - soilMoistureThreshold) > sensorRead.getValue()) {
